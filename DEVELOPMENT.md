@@ -84,4 +84,21 @@ export default {
 - **敏感数据**: `provider-api.js` 自动对 Token 和 Key 进行脱敏处理，严禁将明文 Key 返回给前端。
 
 ---
+
+## 6. 严禁事项与避坑指南 (Critical Warnings)
+
+### 6.1 严禁在模板字符串中滥用非法转义 (No Syntax Errors)
+**错误现象**：浏览器报错 `Uncaught SyntaxError: Invalid or unexpected token`。
+**原因**：在静态 JS 文件（如 `plugin-manager.js`）的模板字符串（` ` ）中使用反斜杠 `\` 转义了非必要的字符（如反引号或美元符）。
+- **极客规范**：
+    - 在 JS 的模板字符串内部，如果需要嵌套其他模板字符串，请直接使用，不要手动添加 `\` 转义。
+    - **严禁**出现 `\` 开头的非法转义字符。这会导致浏览器解析引擎直接崩溃，导致前端页面白屏。
+    - **示例**：
+        - ✅ 正确：`${condition ? `<div>${val}</div>` : ''}`
+        - ❌ 错误：`${condition ? \`<div>\${val}</div>\` : ''}`（反斜杠会导致语法错误）
+
+### 6.2 严禁污染系统环境
+A-Plan 设计初衷是保持系统纯净。严禁插件通过 `process.env` 修改系统全局代理。所有代理行为必须局限在请求级的 `config.PROXY_URL` 注入上。
+
+---
 *A-Plan Team: 让技术回归纯粹，让白嫖更有尊严。*
