@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#059669">
-    <meta name="description" content="A计划 Management Console - Unified management of AI service providers" data-i18n="header.description">
     <title data-i18n="header.title">A计划 - 管理控制台</title>
     <link rel="stylesheet" href="app/base.css">
     <link rel="stylesheet" href="app/mobile.css">
@@ -13,23 +12,9 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header 将由组件加载器动态插入 -->
-        
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Sidebar 容器 -->
-            <div id="sidebar-container">
-                <!-- Sidebar 将由组件加载器动态插入 -->
-            </div>
-
-            <!-- Content Area -->
-            <main class="content" role="main" id="content-container">
-                <!-- 各个 Section 将由组件加载器动态插入 -->
-            </main>
-        </div>
+        <div id="sidebar-container"></div>
+        <main class="content" role="main" id="content-container"></main>
     </div>
-
-    <!-- Toast Notifications -->
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
@@ -38,89 +23,26 @@
     <script type="module" src="app/theme-switcher.js"></script>
     <script type="module" src="app/auth.js"></script>
     <script type="module" src="app/models-manager.js"></script>
+    <script type="module" src="app/app.js"></script>
     <script type="module">
-        // 导入应用入口
-        import { initApp } from './app/app.js';
-        // 导入组件加载器
         import { initializeComponents } from './app/component-loader.js';
-        // 导入多语言、主题切换和认证函数
-        import { initI18n, t, setLanguage, getCurrentLanguage } from './app/i18n.js';
+        import { initI18n, setLanguage, getCurrentLanguage } from './app/i18n.js';
         import { initLanguageSwitcher } from './app/language-switcher.js';
         import { initThemeSwitcher, setTheme, getCurrentTheme } from './app/theme-switcher.js';
         import { initAuth, logout } from './app/auth.js';
         
-        // 尽早应用保存的主题以避免闪烁
         setTheme(getCurrentTheme());
         
-        // 页面加载时检查登录状态并加载组件
         (async function() {
-            try {
-                const isAuthenticated = await initAuth();
-                if (!isAuthenticated) {
-                    return;
-                }
-                console.log('用户已认证');
-                
-                // 加载所有 HTML 组件片段
+            if (await initAuth()) {
                 await initializeComponents();
-                
-                // 组件加载完成后，手动触发应用逻辑初始化（不再依赖事件监听，确保顺序）
-                initApp();
-
-                // 初始化 UI 交互逻辑
                 initThemeSwitcher();
                 initI18n();
                 initLanguageSwitcher();
                 setLanguage(getCurrentLanguage());
-                
-                // 绑定登出按钮
-                const logoutBtn = document.getElementById('logoutBtn');
-                if (logoutBtn && localStorage.getItem('authToken')) {
-                    logoutBtn.style.display = 'inline-block';
-                    logoutBtn.addEventListener('click', async () => {
-                        if (confirm(t('common.confirm') + ' ' + t('header.logout') + '?')) {
-                            await logout();
-                        }
-                    });
-                }
-
-                // 更新路径路由示例
-                updateRoutingExamplesURLs();
-                
-            } catch (error) {
-                console.error('Critical initialization error:', error);
-                if (error.message.includes('Unauthorized') || error.message.includes('fetch')) {
-                    localStorage.removeItem('authToken');
-                    window.location.href = '/login.html';
-                } else {
-                    document.body.innerHTML = `<div style="padding:20px;color:red;">系统初始化失败: ${error.message}<br>请检查服务器连接或尝试刷新页面。</div>`;
-                }
             }
         })();
-
-        // 更新路径路由示例中的URL前缀
-        function updateRoutingExamplesURLs() {
-            const currentURL = window.location.href;
-            const baseURL = currentURL.replace(/\/index\.html$/, '');
-            const endpointPaths = document.querySelectorAll('.endpoint-path');
-            endpointPaths.forEach(element => {
-                const originalPath = element.textContent;
-                if (!originalPath.startsWith(baseURL)) {
-                    const cleanBaseURL = baseURL.replace(/\/$/, '');
-                    const cleanPath = originalPath.startsWith('/') ? originalPath : '/' + originalPath;
-                    element.textContent = cleanBaseURL + cleanPath;
-                }
-            });
-            const curlCodes = document.querySelectorAll('.usage-example pre code');
-            curlCodes.forEach(element => {
-                const curlCommand = element.textContent;
-                const cleanBaseURL = baseURL.replace(/\/$/, '');
-                const updatedCommand = curlCommand.replace(/curl http:\/\/localhost:3000/g, `curl ${cleanBaseURL}`);
-                element.textContent = updatedCommand;
-            });
-        }
         
-        window.initAuth = initAuth;
         window.logout = logout;
     </script>
 </body>
