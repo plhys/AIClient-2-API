@@ -23,8 +23,23 @@ export { broadcastEvent, initializeUIManagement, handleUploadOAuthCredentials, u
  * @param {http.ServerResponse} res - The HTTP response object
  */
 export async function serveStaticFiles(pathParam, res) {
-    // 安全检查：防止目录穿越 (Path Traversal)
-    const normalizedPath = path.normalize(pathParam === '/' || pathParam === '/index.html' ? 'index.html' : pathParam.replace('/static/', ''));
+    // 1. 规范化路径：去除查询参数，确保不以 / 开头，防止 path.join 行为异常
+    let cleanPath = pathParam.split('?')[0];
+    if (cleanPath.startsWith('/static/')) {
+        cleanPath = cleanPath.replace('/static/', '');
+    }
+    if (cleanPath.startsWith('/')) {
+        cleanPath = cleanPath.substring(1);
+    }
+    
+    // 默认指向 index.html
+    if (cleanPath === '' || cleanPath === 'index.html') {
+        cleanPath = 'index.html';
+    }
+
+    const normalizedPath = path.normalize(cleanPath);
+    
+    // 安全检查：防止目录穿越
     if (normalizedPath.startsWith('..') || path.isAbsolute(normalizedPath)) {
         res.writeHead(403);
         res.end('Forbidden');

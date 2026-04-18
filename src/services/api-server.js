@@ -22,9 +22,31 @@ let isTaskRunning = {
 async function gracefulShutdown() {
     logger.info('[A-Plan] Initiating graceful shutdown...');
     
-    // Stop Git sync
+    // 1. 强制刷新提供商池缓存到磁盘
+    try {
+        const poolManager = getProviderPoolManager();
+        if (poolManager && typeof poolManager.flush === 'function') {
+            await poolManager.flush();
+        }
+    } catch (err) {
+        logger.error('[A-Plan] Pool flush failed:', err.message);
+    }
+
+    // 2. Stop and perform final Git sync
     const gitSyncManager = getGitSyncManager();
-    if (gitSyncManager) gitSyncManager.stop();
+    if (gitSyncManager) {
+        gitSyncManager.stop();
+        // 只有开启了同步且有远程仓库时才执行
+        if (gitSyncManager.config?.GIT_SYNC?.enabled && gitSyncManager.config?.GIT_SYNC?.repoUrl) {
+            logger.info('[A-Plan] Performing final configuration sync before exit...');
+            try {
+                // 强制执行一次推送到远程，防止 Pod 销毁时丢配置
+                await gitSyncManager.sync();
+            } catch (err) {
+                logger.error('[A-Plan] Final Git sync failed:', err.message);
+            }
+        }
+    }
 
     try {
         await getTLSSidecar().stop();
@@ -35,7 +57,8 @@ async function gracefulShutdown() {
             logger.info('[A-Plan] HTTP server closed');
             process.exit(0);
         });
-        setTimeout(() => process.exit(1), 5000);
+        // 3秒强制超时退出
+        setTimeout(() => process.exit(1), 3000);
     } else {
         process.exit(0);
     }
@@ -44,6 +67,15 @@ async function gracefulShutdown() {
 function setupSignalHandlers() {
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
+    
+    // 监听主进程发来的 IPC 信号
+    process.on('message', (msg) => {
+        if (msg && msg.type === 'shutdown') {
+            logger.info('[A-Plan] Received shutdown signal from Master');
+            gracefulShutdown();
+        }
+    });
+
     process.on('uncaughtException', (error) => {
         logger.error('[A-Plan] Uncaught exception:', error);
         // Keep running for retryable errors, else shutdown

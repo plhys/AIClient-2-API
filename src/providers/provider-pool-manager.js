@@ -2203,6 +2203,17 @@ export class ProviderPoolManager {
     }
 
     /**
+     * 外部调用的强制刷盘方法，用于优雅关闭时确保数据不丢失
+     */
+    async flush() {
+        if (this.pendingSaves.size > 0) {
+            this._log('info', 'Flushing pending saves before shutdown...');
+            if (this.saveTimer) clearTimeout(this.saveTimer);
+            await this._flushPendingSaves();
+        }
+    }
+
+    /**
      * 优化1: 添加防抖保存方法
      * 延迟保存操作，避免频繁的文件 I/O
      * @private

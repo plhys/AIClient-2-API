@@ -52,17 +52,28 @@
         
         // 页面加载时检查登录状态并加载组件
         (async function() {
-            const isAuthenticated = await initAuth();
-            if (!isAuthenticated) {
-                // 如果未认证，initAuth会自动重定向到登录页面
-                return;
-            }
-            // 认证成功，继续加载页面
-            console.log('用户已认证');
-            
             try {
+                const isAuthenticated = await initAuth();
+                if (!isAuthenticated) {
+                    return;
+                }
+                console.log('用户已认证');
+                
                 // 加载所有组件
                 await initializeComponents();
+                
+                // ... (后续初始化代码)
+            } catch (error) {
+                console.error('Critical initialization error:', error);
+                // 如果发生严重错误，尝试清除 token 并重定向到登录页，避免死循环白屏
+                if (error.message.includes('Unauthorized') || error.message.includes('fetch')) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login.html';
+                } else {
+                    document.body.innerHTML = `<div style="padding:20px;color:red;">系统初始化失败: ${error.message}<br>请检查服务器连接或尝试刷新页面。</div>`;
+                }
+            }
+        })();
                 
                 // 组件加载完成后初始化主题切换器（此时按钮已存在于DOM中）
                 initThemeSwitcher();
