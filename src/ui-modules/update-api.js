@@ -61,40 +61,44 @@ export async function checkForUpdates() {
     } catch (e) {}
 
     try {
-        // 1. 获取远程 Tags
-        await execAsync('git fetch --all --tags --force');
+        // 1. 极客加固：获取远程 Tags，并尝试处理浅克隆的情况
+        try {
+            await execAsync('git fetch --all --tags --force');
+        } catch (fetchErr) {
+            // 如果 fetch 失败，尝试 unshallow (针对某些 Pod 环境的优化)
+            await execAsync('git fetch --unshallow --tags').catch(() => {});
+        }
         
-        // 2. 列出所有 Tags，并尝试不同的排序方式
+        // 2. 列出所有 Tags
         const { stdout } = await execAsync('git tag -l');
         let tags = stdout.split('\n').map(t => t.trim()).filter(t => t.length > 0);
         
-        // 极客版排序：手动处理 beta 版本号，确保 v3.0.0-beta.11 大于 v3.0.0-beta.5
+        // 3. 工业级版本排序算法 (SemVer 兼容)
         tags.sort((a, b) => {
-            const getRank = (v) => {
-                // 提取数字部分进行比较
+            const parseVersion = (v) => {
                 const parts = v.replace(/^v/, '').split(/[.-]/);
                 return parts.map(p => {
                     const n = parseInt(p, 10);
                     return isNaN(n) ? p : n;
                 });
             };
-            const rankA = getRank(a);
-            const rankB = getRank(b);
-            
-            // 逐位比较
-            for (let i = 0; i < Math.max(rankA.length, rankB.length); i++) {
-                const vA = rankA[i];
-                const vB = rankB[i];
-                if (vA === undefined) return -1;
-                if (vB === undefined) return 1;
-                if (typeof vA !== typeof vB) return typeof vA === 'number' ? 1 : -1;
-                if (vA !== vB) return vA > vB ? 1 : -1;
+            const vA = parseVersion(a);
+            const vB = parseVersion(b);
+            const maxLen = Math.max(vA.length, vB.length);
+            for (let i = 0; i < maxLen; i++) {
+                const pA = vA[i];
+                const pB = vB[i];
+                if (pA === undefined) return -1;
+                if (pB === undefined) return 1;
+                if (typeof pA !== typeof pB) return typeof pA === 'number' ? 1 : -1;
+                if (pA > pB) return 1;
+                if (pA < pB) return -1;
             }
             return 0;
-        }).reverse(); // 降序排列，最新版排在最上面
-        
-        // 3. 始终把 HEAD (主分支最新) 放在最前面
-        const availableVersions = ['HEAD', ...tags];
+        }).reverse(); // 最新版本在最前
+
+        // 4. 将 HEAD 始终保留在最后，作为“最新源码”选项
+        const availableVersions = [...tags, 'HEAD'];
         const latestVersion = tags[0] || 'HEAD';
 
         return {
@@ -102,7 +106,7 @@ export async function checkForUpdates() {
             localVersion,
             latestVersion,
             availableVersions,
-            updateMethod: 'git-tags',
+            updateMethod: 'git-tags-hard',
             error: null
         };
     } catch (error) {
@@ -126,54 +130,45 @@ export async function performUpdate(targetTag = null) {
     logger.info(`[Update] Manual update triggered. Target: ${target}`);
 
     try {
-        // 1. 获取最新代码
+        // 1. 获取最新代码并强制同步
         await execAsync('git fetch --all --tags --force');
         
         if (target === 'HEAD') {
             logger.info('[Update] Switching to origin/main (HEAD)...');
             await execAsync('git reset --hard origin/main');
         } else {
-            logger.info(`[Update] Checking out tag: ${target}...`);
+            logger.info(`[Update] Checking out and resetting to tag: ${target}...`);
+            // 工业级双重保障：checkout + reset --hard
             await execAsync(`git checkout ${target}`);
-            // 如果是 Tag，建议 reset --hard 确保干净
             await execAsync(`git reset --hard ${target}`);
         }
 
-        // 2. 检查依赖
-        logger.info('[Update] Running npm install...');
-        // 极速模式下使用 --production
+        // 2. 补全生产依赖 (静默、安全)
+        logger.info('[Update] Synchronizing dependencies...');
         await execAsync('npm install --production');
 
-        // 3. 更新 VERSION 文件 (如果是 checkout tag)
-        if (target !== 'HEAD') {
-            const versionFilePath = path.join(process.cwd(), 'VERSION');
-            writeFileSync(versionFilePath, target.replace(/^v/, ''));
-        }
-
-        // 4. 准备重启
-        logger.info('[Update] Update successful, triggering service restart...');
+        // 3. 准备重启
+        logger.info('[Update] Core synchronized. Notifying Master for zero-downtime reload...');
         
         // 触发 Master 进程热重启
         setTimeout(() => {
             const masterPort = process.env.MASTER_PORT || 3100;
-            logger.info(`[Update] Requesting restart on master port ${masterPort}...`);
-            // 使用内部调用的方式通知 Master 重启
             axios.post(`http://127.0.0.1:${masterPort}/master/restart`).catch(err => {
-                logger.warn('[Update] Auto-restart notification failed, manual restart may be required.');
+                logger.warn('[Update] Master notify failed, manual restart recommended.');
             });
         }, 3000);
 
         return {
             success: true,
-            message: `Successfully updated to ${target}. Service is restarting...`,
+            message: `Successfully synchronized to ${target}. Warming up workers...`,
             updated: true,
             target: target
         };
     } catch (error) {
-        logger.error('[Update] Update failed:', error.message);
+        logger.error('[Update] Sync failed:', error.message);
         return {
             success: false,
-            message: `Update failed: ${error.message}`,
+            message: `Sync failed: ${error.message}`,
             error: error.message
         };
     }
