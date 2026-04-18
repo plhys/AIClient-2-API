@@ -126,6 +126,7 @@ function renderPluginsList() {
             <div class="plugin-description">${plugin.description || t('plugins.noDescription')}</div>
             <div class="plugin-badges">
                 ${badgesHtml}
+                ${plugin.name === 'clash-guardian' ? \`<a href="/plugins/clash-guardian/clash.html" target="_blank" class="plugin-badge routes" style="text-decoration:none;cursor:pointer;"><i class="fas fa-cog"></i> \${t('plugins.config') || '配置'}</a>\` : ''}
             </div>
             <div class="plugin-status">
                 <i class="fas fa-circle"></i> 
