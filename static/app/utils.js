@@ -76,8 +76,13 @@ function getBaseProviderConfigs() {
         },
         { 
             id: 'deepseek-custom', 
-            name: 'DeepSeek', 
+            name: 'DeepSeek (Official)', 
             icon: 'fa-microchip'
+        },
+        { 
+            id: 'deepseek-free', 
+            name: 'DeepSeek (Reverse Free)', 
+            icon: 'fa-magic'
         },
     ];
 }
@@ -468,6 +473,14 @@ function getProviderTypeFields(providerType) {
                 label: 'DeepSeek Base URL',
                 type: 'text',
                 placeholder: 'https://api.deepseek.com'
+            }
+        ],
+        'deepseek-free': [
+            {
+                id: 'DEEPSEEK_USER_TOKEN',
+                label: 'DeepSeek User Token (Web)',
+                type: 'password',
+                placeholder: 'Bearer token from chat.deepseek.com'
             }
         ]
     };

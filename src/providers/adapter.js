@@ -10,6 +10,7 @@ import { CodexApiService } from './openai/codex-core.js';
 import { ForwardApiService } from './forward/forward-core.js';
 import { GrokApiService } from './grok/grok-core.js';
 import { DeepSeekApiService } from './deepseek/deepseek-core.js';
+import { DeepSeekChatService } from './deepseek/deepseek-chat.js';
 import { MODEL_PROVIDER } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
@@ -96,32 +97,33 @@ export class ApiServiceAdapter {
     }
 }
 
-// DeepSeek API 服务适配器
-export class DeepSeekApiServiceAdapter extends ApiServiceAdapter {
+// DeepSeek 网页版逆向服务适配器
+export class DeepSeekFreeApiServiceAdapter extends ApiServiceAdapter {
     constructor(config) {
         super();
-        this.deepSeekApiService = new DeepSeekApiService(config);
+        this.deepSeekChatService = new DeepSeekChatService(config);
     }
 
     async generateContent(model, requestBody) {
-        return this.deepSeekApiService.generateContent(model, requestBody);
+        // 非流式也走流式聚合
+        let fullContent = '';
+        for await (const chunk of this.deepSeekChatService.generateContentStream(model, requestBody)) {
+            fullContent += chunk.choices[0].delta.content || '';
+        }
+        return { choices: [{ message: { content: fullContent } }] };
     }
 
     async *generateContentStream(model, requestBody) {
-        yield* this.deepSeekApiService.generateContentStream(model, requestBody);
+        yield* this.deepSeekChatService.generateContentStream(model, requestBody);
     }
 
     async listModels() {
-        return this.deepSeekApiService.listModels();
+        return { data: [{ id: 'deepseek-chat-free' }] };
     }
 
     async refreshToken() { return Promise.resolve(); }
     async forceRefreshToken() { return Promise.resolve(); }
     isExpiryDateNear() { return false; }
-    
-    async getUsageLimits() {
-        return this.deepSeekApiService.getUsageLimits();
-    }
 }
 
 // Gemini API 服务适配器
@@ -727,6 +729,7 @@ registerAdapter(MODEL_PROVIDER.KIRO_API, KiroApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.CODEX_API, CodexApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.GROK_CUSTOM, GrokApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.DEEPSEEK_CUSTOM, DeepSeekApiServiceAdapter);
+registerAdapter(MODEL_PROVIDER.DEEPSEEK_FREE, DeepSeekFreeApiServiceAdapter);
 // registerAdapter(MODEL_PROVIDER.FORWARD_API, ForwardApiServiceAdapter);
 // registerAdapter(MODEL_PROVIDER.QWEN_API, QwenApiServiceAdapter);
 // registerAdapter(MODEL_PROVIDER.IFLOW_API, IFlowApiServiceAdapter);

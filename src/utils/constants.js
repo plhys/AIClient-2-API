@@ -67,5 +67,6 @@ export const MODEL_PROVIDER = {
     FORWARD_API: 'forward-api',
     GROK_CUSTOM: 'grok-custom',
     DEEPSEEK_CUSTOM: 'deepseek-custom',
+    DEEPSEEK_FREE: 'deepseek-free',
     AUTO: 'auto',
 };
