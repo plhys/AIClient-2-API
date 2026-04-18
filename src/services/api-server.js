@@ -6,23 +6,24 @@ import { initializeConfig, CONFIG } from '../core/config-manager.js';
 import { initApiService } from './service-manager.js';
 import { initializeAPIManagement } from './api-manager.js';
 import { discoverPlugins, getPluginManager } from '../core/plugin-manager.js';
-import { createRequestHandler } from '../handlers/request-handler.js';
 import { getTLSSidecar } from '../utils/tls-sidecar.js';
-import { HEALTH_CHECK } from '../utils/constants.js';
 import { getProviderPoolManager } from './service-manager.js';
 import { isRetryableNetworkError } from '../utils/common.js';
 import { getGitSyncManager } from './git-sync-manager.js';
 
 let serverInstance = null;
+let requestHandlerInstance = null;
 let isTaskRunning = {
     heartbeat: false,
     healthCheck: false
 };
 
+// 4.0 核心状态：标记核心逻辑是否已加载完成
+global.CORE_READY = false;
+
 async function gracefulShutdown() {
     logger.info('[A-Plan] Initiating graceful shutdown...');
     
-    // 1. 强制刷新提供商池缓存到磁盘
     try {
         const poolManager = getProviderPoolManager();
         if (poolManager && typeof poolManager.flush === 'function') {
@@ -32,15 +33,12 @@ async function gracefulShutdown() {
         logger.error('[A-Plan] Pool flush failed:', err.message);
     }
 
-    // 2. Stop and perform final Git sync
     const gitSyncManager = getGitSyncManager();
     if (gitSyncManager) {
         gitSyncManager.stop();
-        // 只有开启了同步且有远程仓库时才执行
         if (gitSyncManager.config?.GIT_SYNC?.enabled && gitSyncManager.config?.GIT_SYNC?.repoUrl) {
             logger.info('[A-Plan] Performing final configuration sync before exit...');
             try {
-                // 强制执行一次推送到远程，防止 Pod 销毁时丢配置
                 await gitSyncManager.sync();
             } catch (err) {
                 logger.error('[A-Plan] Final Git sync failed:', err.message);
@@ -57,7 +55,6 @@ async function gracefulShutdown() {
             logger.info('[A-Plan] HTTP server closed');
             process.exit(0);
         });
-        // 3秒强制超时退出
         setTimeout(() => process.exit(1), 3000);
     } else {
         process.exit(0);
@@ -68,7 +65,6 @@ function setupSignalHandlers() {
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
     
-    // 监听主进程发来的 IPC 信号
     process.on('message', (msg) => {
         if (msg && msg.type === 'shutdown') {
             logger.info('[A-Plan] Received shutdown signal from Master');
@@ -78,106 +74,124 @@ function setupSignalHandlers() {
 
     process.on('uncaughtException', (error) => {
         logger.error('[A-Plan] Uncaught exception:', error);
-        // Keep running for retryable errors, else shutdown
         if (!isRetryableNetworkError(error)) {
             gracefulShutdown();
         }
     });
 }
 
+/**
+ * 4.0 幽灵架构：启动函数
+ */
 async function startServer() {
-    await initializeConfig(process.argv.slice(2), 'configs/config.json');
-    
-    // Core optimization: Minimal Mode if specified, but default keeps UI
-    if (process.env.CORE_ONLY === 'true' || process.env.LITE_MODE === 'true') {
-        CONFIG.CORE_ONLY = true;
-        CONFIG.UI_ENABLED = false;
-        // In CORE_ONLY mode, we still enable the plugin SYSTEM for auth, 
-        // but individual non-auth plugins can be disabled via configs/plugins.json
-        CONFIG.PLUGINS_ENABLED = true; 
-        logger.info('[A-Plan] 🚀 Running in CORE_ONLY mode (UI/Extended Stats disabled, Auth-Engine active)');
-    }
+    // 1. 预解析基础配置（端口和主机），不进行深层初始化
+    const PORT = parseInt(process.env.SERVER_PORT || process.env.PORT) || 3000;
+    const HOST = process.env.HOST || '0.0.0.0';
 
-    if (CONFIG.TLS_SIDECAR_ENABLED) {
-        await getTLSSidecar().start({
-            port: CONFIG.TLS_SIDECAR_PORT,
-            binaryPath: CONFIG.TLS_SIDECAR_BINARY_PATH || undefined,
-        });
-    }
-
-    // Initialize plugin system (Mandatory for Auth)
-    logger.info('[Initialization] Discovering and initializing plugins...');
-    await discoverPlugins();
-    const pluginManager = getPluginManager();
-    await pluginManager.initAll(CONFIG);
-    
-    // Log loaded plugins
-    const pluginList = pluginManager.getPluginList();
-    if (pluginList.length > 0) {
-        console.log('\n🧩 [Module System] Active Plugins:');
-        pluginList.forEach(p => {
-            const status = p.enabled ? '✅' : '⚪';
-            console.log(`  ${status} ${p.name.padEnd(20)} v${(p.version || '1.0.0').padEnd(10)} [${p.enabled ? 'LOADED' : 'DISABLED'}]`);
-        });
-        console.log('');
-    }
-
-    const services = await initApiService(CONFIG, true);
-    
-    const heartbeatAndRefreshToken = initializeAPIManagement(services);
-    const requestHandlerInstance = createRequestHandler(CONFIG, getProviderPoolManager());
-
+    // 2. 立即创建 HTTP 实例并监听端口 (V2 般的秒开感)
     serverInstance = http.createServer({
         requestTimeout: 0,
         headersTimeout: 60000,
         keepAliveTimeout: 65000
-    }, requestHandlerInstance);
-
-    // 极致速度优化：先让端口跑起来，再慢慢搞 Git 同步和定时任务
-    serverInstance.listen(CONFIG.SERVER_PORT, CONFIG.HOST, () => {
-        logger.info(`🚀 A-Plan (A计划) Gateway running on http://${CONFIG.HOST}:${CONFIG.SERVER_PORT}`);
-        
-        // 端口一旦 Ready，立即在后台异步启动 Git 同步
-        const gitSyncManager = getGitSyncManager(CONFIG);
-        if (gitSyncManager) {
-            gitSyncManager.init().catch(err => {
-                logger.error('[A-Plan] Git sync background initialization failed:', err.message);
+    }, async (req, res) => {
+        // 如果核心逻辑还没加载完，返回 503 让客户端重试，但不挂断连接
+        if (!global.CORE_READY || !requestHandlerInstance) {
+            res.writeHead(503, { 
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Retry-After': '1' 
             });
+            return res.end('A-Plan 4.0 Core is booting up... Please retry in a second.');
         }
-
-        // 剩下的心跳、健康检查全都在后台跑，不影响 API 响应
-        if (CONFIG.CRON_REFRESH_TOKEN) {
-            // ... (省略后续逻辑)
-            setInterval(async () => {
-                if (isTaskRunning.heartbeat) return;
-                isTaskRunning.heartbeat = true;
-                try {
-                    await heartbeatAndRefreshToken();
-                } finally {
-                    isTaskRunning.heartbeat = false;
-                }
-            }, CONFIG.CRON_NEAR_MINUTES * 60 * 1000);
-        }
-
-        // Task Lock for Health Checks
-        const poolManager = getProviderPoolManager();
-        if (poolManager) {
-            poolManager.performInitialHealthChecks();
-            setInterval(async () => {
-                if (isTaskRunning.healthCheck) return;
-                isTaskRunning.healthCheck = true;
-                try {
-                    await poolManager.performHealthChecks();
-                } finally {
-                    isTaskRunning.healthCheck = false;
-                }
-            }, (CONFIG.SCHEDULED_HEALTH_CHECK?.interval || 300000));
-        }
+        // 核心已就绪，交给正式处理器
+        return requestHandlerInstance(req, res);
     });
+
+    serverInstance.listen(PORT, HOST, () => {
+        logger.info(`🚀 [A-Plan 4.0 Ghost] Port ${PORT} occupied in milliseconds. Bootstrapping core...`);
+        
+        // 3. 在端口开启后的“背景音”里，异步执行重型初始化
+        bootstrapCore().catch(err => {
+            logger.error('[A-Plan 4.0] Critical Bootstrap Failure:', err.message);
+        });
+    });
+}
+
+/**
+ * 4.0 核心异步激活函数
+ */
+async function bootstrapCore() {
+    const startTime = Date.now();
+    
+    // 加载完整配置
+    await initializeConfig(process.argv.slice(2), 'configs/config.json');
+    
+    // 环境优化
+    if (process.env.CORE_ONLY === 'true' || process.env.LITE_MODE === 'true') {
+        CONFIG.CORE_ONLY = true;
+        CONFIG.UI_ENABLED = false;
+        CONFIG.PLUGINS_ENABLED = true; 
+        logger.info('[A-Plan 4.0] 🚀 Running in CORE_ONLY mode');
+    }
+
+    // 异步启动 Sidecar
+    if (CONFIG.TLS_SIDECAR_ENABLED) {
+        getTLSSidecar().start({
+            port: CONFIG.TLS_SIDECAR_PORT,
+            binaryPath: CONFIG.TLS_SIDECAR_BINARY_PATH || undefined,
+        }).catch(e => logger.error('[Sidecar] Failed:', e.message));
+    }
+
+    // 插件系统：仅在非精简模式下加载
+    if (!CONFIG.CORE_ONLY) {
+        await discoverPlugins();
+        await getPluginManager().initAll(CONFIG);
+    }
+
+    // 核心业务初始化
+    const services = await initApiService(CONFIG, true);
+    const heartbeatAndRefreshToken = initializeAPIManagement(services);
+    
+    // 动态导入请求处理器
+    const { createRequestHandler } = await import('../handlers/request-handler.js');
+    requestHandlerInstance = createRequestHandler(CONFIG, getProviderPoolManager());
+
+    // 启动 Git 同步
+    const gitSyncManager = getGitSyncManager(CONFIG);
+    if (gitSyncManager) {
+        gitSyncManager.init().catch(e => logger.error('[GitSync] Error:', e.message));
+    }
+
+    // 启动定时任务
+    setupBackgroundTasks(heartbeatAndRefreshToken);
+
+    // 标记就绪
+    global.CORE_READY = true;
+    const duration = Date.now() - startTime;
+    logger.info(`✅ [A-Plan 4.0] Core Hydrated in ${duration}ms. Full monster mode engaged.`);
+}
+
+function setupBackgroundTasks(heartbeatAndRefreshToken) {
+    if (CONFIG.CRON_REFRESH_TOKEN) {
+        setInterval(async () => {
+            if (isTaskRunning.heartbeat) return;
+            isTaskRunning.heartbeat = true;
+            try { await heartbeatAndRefreshToken(); } finally { isTaskRunning.heartbeat = false; }
+        }, CONFIG.CRON_NEAR_MINUTES * 60 * 1000);
+    }
+
+    const poolManager = getProviderPoolManager();
+    if (poolManager) {
+        poolManager.performInitialHealthChecks();
+        setInterval(async () => {
+            if (isTaskRunning.healthCheck) return;
+            isTaskRunning.healthCheck = true;
+            try { await poolManager.performHealthChecks(); } finally { isTaskRunning.healthCheck = false; }
+        }, (CONFIG.SCHEDULED_HEALTH_CHECK?.interval || 300000));
+    }
 }
 
 setupSignalHandlers();
 startServer().catch(err => {
-    logger.error("[A-Plan] Failed to start:", err.message);
+    logger.error("[A-Plan 4.0] Fatal Start Error:", err.message);
     process.exit(1);
 });
