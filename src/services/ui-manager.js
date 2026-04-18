@@ -371,6 +371,20 @@ export async function handleUIApiRequests(method, pathParam, req, res, currentCo
         return await pluginApi.handleTogglePlugin(req, res, pluginName);
     }
 
+    // Install plugin from marketplace
+    const installPluginMatch = pathParam.match(/^\/api\/plugins\/(.+)\/install$/);
+    if (method === 'POST' && installPluginMatch) {
+        const pluginName = decodeURIComponent(installPluginMatch[1]);
+        return await pluginApi.handleInstallPlugin(req, res, pluginName);
+    }
+
+    // Uninstall plugin
+    const uninstallPluginMatch = pathParam.match(/^\/api\/plugins\/(.+)\/uninstall$/);
+    if (method === 'DELETE' && uninstallPluginMatch) {
+        const pluginName = decodeURIComponent(uninstallPluginMatch[1]);
+        return await pluginApi.handleUninstallPlugin(req, res, pluginName);
+    }
+
     // Custom models management
     if (method === 'GET' && pathParam === '/api/custom-models') {
         return await customModelsApi.handleGetCustomModels(req, res, currentConfig);

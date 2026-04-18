@@ -75,3 +75,59 @@ export async function handleTogglePlugin(req, res, pluginName) {
         return true;
     }
 }
+
+/**
+ * 安装插件
+ */
+export async function handleInstallPlugin(req, res, pluginName) {
+    try {
+        const pluginManager = getPluginManager();
+        await pluginManager.installPlugin(pluginName);
+
+        broadcastEvent('plugin_update', {
+            action: 'install',
+            pluginName,
+            timestamp: new Date().toISOString()
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: true,
+            message: `Plugin ${pluginName} installed successfully`
+        }));
+        return true;
+    } catch (error) {
+        logger.error('[UI API] Failed to install plugin:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: error.message } }));
+        return true;
+    }
+}
+
+/**
+ * 卸载插件
+ */
+export async function handleUninstallPlugin(req, res, pluginName) {
+    try {
+        const pluginManager = getPluginManager();
+        await pluginManager.uninstallPlugin(pluginName);
+
+        broadcastEvent('plugin_update', {
+            action: 'uninstall',
+            pluginName,
+            timestamp: new Date().toISOString()
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: true,
+            message: `Plugin ${pluginName} uninstalled successfully`
+        }));
+        return true;
+    } catch (error) {
+        logger.error('[UI API] Failed to uninstall plugin:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: error.message } }));
+        return true;
+    }
+}

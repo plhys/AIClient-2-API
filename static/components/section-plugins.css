@@ -99,6 +99,29 @@
 .plugin-badge.middleware { background: var(--info-bg); color: var(--info-text); }
 .plugin-badge.routes { background: var(--success-bg); color: var(--success-text); }
 .plugin-badge.hooks { background: var(--warning-bg); color: var(--warning-text); }
+.plugin-badge.market { background: var(--primary-bg); color: var(--primary-color); border: 1px solid var(--primary-color); }
+
+.plugin-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.plugin-card.uninstalled {
+    border-style: dashed;
+    background: var(--bg-tertiary);
+}
+
+.btn-icon.delete {
+    color: var(--danger-color);
+    background: transparent;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.btn-icon.delete:hover {
+    background: var(--danger-bg);
+}
 
 .plugin-status {
     display: flex;

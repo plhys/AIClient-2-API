@@ -13,6 +13,11 @@ export function initPluginManager() {
         refreshBtn.addEventListener('click', loadPlugins);
     }
     
+    // 注入全局函数以便在 HTML 中使用
+    window.togglePlugin = togglePlugin;
+    window.installPlugin = installPlugin;
+    window.uninstallPlugin = uninstallPlugin;
+    
     // 初始加载
     loadPlugins();
 }
@@ -41,8 +46,8 @@ export async function loadPlugins() {
             
             // 更新统计信息
             if (totalEl) totalEl.textContent = pluginsList.length;
-            if (enabledEl) enabledEl.textContent = pluginsList.filter(p => p.enabled).length;
-            if (disabledEl) disabledEl.textContent = pluginsList.filter(p => !p.enabled).length;
+            if (enabledEl) enabledEl.textContent = pluginsList.filter(p => p.installed && p.enabled).length;
+            if (disabledEl) disabledEl.textContent = pluginsList.filter(p => p.installed && !p.enabled).length;
         } else {
             if (emptyEl) emptyEl.style.display = 'flex';
         }
@@ -75,39 +80,56 @@ function renderPluginsList() {
     
     pluginsList.forEach(plugin => {
         const card = document.createElement('div');
-        card.className = `plugin-card ${plugin.enabled ? 'enabled' : 'disabled'}`;
+        card.className = `plugin-card ${plugin.installed ? (plugin.enabled ? 'enabled' : 'disabled') : 'uninstalled'}`;
         
         // 构建标签 HTML
         let badgesHtml = '';
-        if (plugin.hasMiddleware) {
-            badgesHtml += `<span class="plugin-badge middleware" title="${t('plugins.badge.middleware.title')}">Middleware</span>`;
-        }
-        if (plugin.hasRoutes) {
-            badgesHtml += `<span class="plugin-badge routes" title="${t('plugins.badge.routes.title')}">Routes</span>`;
-        }
-        if (plugin.hasHooks) {
-            badgesHtml += `<span class="plugin-badge hooks" title="${t('plugins.badge.hooks.title')}">Hooks</span>`;
+        if (plugin.installed) {
+            if (plugin.hasMiddleware) badgesHtml += `<span class="plugin-badge middleware">Middleware</span>`;
+            if (plugin.hasRoutes) badgesHtml += `<span class="plugin-badge routes">Routes</span>`;
+        } else {
+            badgesHtml += `<span class="plugin-badge market">Marketplace</span>`;
         }
         
-        card.innerHTML = `
-            <div class="plugin-header">
-                <div class="plugin-title">
-                    <h3>${plugin.name}</h3>
-                    <span class="plugin-version">v${plugin.version}</span>
-                </div>
+        // 构建操作按钮
+        let actionHtml = '';
+        if (plugin.installed) {
+            actionHtml = `
                 <div class="plugin-actions">
                     <label class="toggle-switch">
                         <input type="checkbox" ${plugin.enabled ? 'checked' : ''} onchange="window.togglePlugin('${plugin.name}', this.checked)">
                         <span class="toggle-slider"></span>
                     </label>
+                    <button class="btn-icon delete" onclick="window.uninstallPlugin('${plugin.name}')" title="卸载插件">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 </div>
+            `;
+        } else {
+            actionHtml = `
+                <div class="plugin-actions">
+                    <button class="btn btn-primary btn-sm" onclick="window.installPlugin('${plugin.name}')">
+                        <i class="fas fa-download"></i> 安装
+                    </button>
+                </div>
+            `;
+        }
+        
+        card.innerHTML = `
+            <div class="plugin-header">
+                <div class="plugin-title">
+                    <h3>${plugin.displayName || plugin.name}</h3>
+                    <span class="plugin-version">v${plugin.version}</span>
+                </div>
+                ${actionHtml}
             </div>
             <div class="plugin-description">${plugin.description || t('plugins.noDescription')}</div>
             <div class="plugin-badges">
                 ${badgesHtml}
             </div>
             <div class="plugin-status">
-                <i class="fas fa-circle"></i> <span>${plugin.enabled ? t('plugins.status.enabled') : t('plugins.status.disabled')}</span>
+                <i class="fas fa-circle"></i> 
+                <span>${plugin.installed ? (plugin.enabled ? t('plugins.status.enabled') : t('plugins.status.disabled')) : '尚未安装'}</span>
             </div>
         `;
         
@@ -117,8 +139,6 @@ function renderPluginsList() {
 
 /**
  * 切换插件启用状态
- * @param {string} pluginName - 插件名称
- * @param {boolean} enabled - 是否启用
  */
 export async function togglePlugin(pluginName, enabled) {
     try {
@@ -128,16 +148,51 @@ export async function togglePlugin(pluginName, enabled) {
         });
         
         showToast(t('common.success'), t('plugins.toggle.success', { name: pluginName, status: enabled ? t('common.enabled') : t('common.disabled') }), 'success');
-        
-        // 重新加载列表以更新状态
         loadPlugins();
-        
-        // 提示需要重启
         showToast(t('common.info'), t('plugins.restart.required'), 'info');
     } catch (error) {
         console.error(`Failed to toggle plugin ${pluginName}:`, error);
         showToast(t('common.error'), t('plugins.toggle.failed'), 'error');
-        // 恢复开关状态
         loadPlugins();
+    }
+}
+
+/**
+ * 安装插件
+ */
+export async function installPlugin(pluginName) {
+    try {
+        showToast('正在安装', \`正在从市场获取 \${pluginName}...\`, 'info');
+        await apiRequest(`/api/plugins/${encodeURIComponent(pluginName)}/install`, {
+            method: 'POST'
+        });
+        
+        showToast(t('common.success'), \`插件 \${pluginName} 安装成功！\`, 'success');
+        loadPlugins();
+        showToast(t('common.info'), '请在启用插件后重启服务。', 'info');
+    } catch (error) {
+        console.error(\`Failed to install plugin \${pluginName}:\`, error);
+        showToast(t('common.error'), \`安装失败: \${error.message}\`, 'error');
+    }
+}
+
+/**
+ * 卸载插件
+ */
+export async function uninstallPlugin(pluginName) {
+    if (!confirm(\`确定要卸载插件 \${pluginName} 吗？此操作将删除该插件的所有本地文件。\`)) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/api/plugins/${encodeURIComponent(pluginName)}/uninstall`, {
+            method: 'DELETE'
+        });
+        
+        showToast(t('common.success'), \`插件 \${pluginName} 已卸载。\`, 'success');
+        loadPlugins();
+    } catch (error) {
+        console.error(\`Failed to uninstall plugin \${pluginName}:\`, error);
+        showToast(t('common.error'), \`卸载失败: \${error.message}\`, 'error');
     }
 }
