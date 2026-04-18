@@ -61,12 +61,11 @@ export async function checkForUpdates() {
     } catch (e) {}
 
     try {
-        // 1. 极客加固：获取远程 Tags，并尝试处理浅克隆的情况
+        // 1. 极客加固：强制清理远程已删除的标签 (--prune --prune-tags)
         try {
-            await execAsync('git fetch --all --tags --force');
+            await execAsync('git fetch --all --tags --force --prune --prune-tags');
         } catch (fetchErr) {
-            // 如果 fetch 失败，尝试 unshallow (针对某些 Pod 环境的优化)
-            await execAsync('git fetch --unshallow --tags').catch(() => {});
+            await execAsync('git fetch --unshallow --tags --prune --prune-tags').catch(() => {});
         }
         
         // 2. 列出所有 Tags
