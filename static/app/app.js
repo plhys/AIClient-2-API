@@ -215,7 +215,7 @@ function initMobileMenu() {
 
 // 等待组件加载完成后初始化应用
 // 组件加载器会在所有组件加载完成后触发 'componentsLoaded' 事件
-window.addEventListener('componentsLoaded', initApp);
+// window.addEventListener('componentsLoaded', initApp); // 4.0 改进：在 index.html 中手动顺序调用
 
 // 如果组件已经加载完成（例如页面刷新后），也需要初始化
 // 检查是否有组件已经存在
@@ -262,7 +262,27 @@ window.refreshUsage = refreshUsage;
 // 插件管理相关全局函数
 window.togglePlugin = togglePlugin;
 
-// 导出调试函数
-window.getProviderStats = () => getProviderStats(providerStats);
+export {
+    initApp,
+    loadInitialData,
+    loadProviders,
+    openProviderManager,
+    showProviderManagerModal,
+    refreshProviderConfig,
+    fileUploadHandler,
+    showAuthModal,
+    executeGenerateAuthUrl,
+    handleGenerateAuthUrl,
+    showAddProviderGroupModal,
+    viewConfig,
+    deleteConfig,
+    loadConfigList,
+    closeConfigModal,
+    copyConfigContent,
+    reloadConfig,
+    generateApiKey,
+    refreshUsage,
+    togglePlugin
+};
 
 console.log('A计划 管理控制台已加载 - 模块化版本');

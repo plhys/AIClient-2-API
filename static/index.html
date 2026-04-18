@@ -39,6 +39,8 @@
     <script type="module" src="app/auth.js"></script>
     <script type="module" src="app/models-manager.js"></script>
     <script type="module">
+        // 导入应用入口
+        import { initApp } from './app/app.js';
         // 导入组件加载器
         import { initializeComponents } from './app/component-loader.js';
         // 导入多语言、主题切换和认证函数
@@ -47,7 +49,7 @@
         import { initThemeSwitcher, setTheme, getCurrentTheme } from './app/theme-switcher.js';
         import { initAuth, logout } from './app/auth.js';
         
-        // 尽早应用保存的主题以避免闪烁（但不绑定按钮事件，因为按钮还不存在）
+        // 尽早应用保存的主题以避免闪烁
         setTheme(getCurrentTheme());
         
         // 页面加载时检查登录状态并加载组件
@@ -59,15 +61,19 @@
                 }
                 console.log('用户已认证');
                 
-                // 加载所有组件
+                // 加载所有 HTML 组件片段
                 await initializeComponents();
                 
-                // 组件加载完成后初始化逻辑
+                // 组件加载完成后，手动触发应用逻辑初始化（不再依赖事件监听，确保顺序）
+                initApp();
+
+                // 初始化 UI 交互逻辑
                 initThemeSwitcher();
                 initI18n();
                 initLanguageSwitcher();
                 setLanguage(getCurrentLanguage());
                 
+                // 绑定登出按钮
                 const logoutBtn = document.getElementById('logoutBtn');
                 if (logoutBtn && localStorage.getItem('authToken')) {
                     logoutBtn.style.display = 'inline-block';
@@ -77,7 +83,10 @@
                         }
                     });
                 }
+
+                // 更新路径路由示例
                 updateRoutingExamplesURLs();
+                
             } catch (error) {
                 console.error('Critical initialization error:', error);
                 if (error.message.includes('Unauthorized') || error.message.includes('fetch')) {
@@ -93,7 +102,6 @@
         function updateRoutingExamplesURLs() {
             const currentURL = window.location.href;
             const baseURL = currentURL.replace(/\/index\.html$/, '');
-            
             const endpointPaths = document.querySelectorAll('.endpoint-path');
             endpointPaths.forEach(element => {
                 const originalPath = element.textContent;
@@ -103,7 +111,6 @@
                     element.textContent = cleanBaseURL + cleanPath;
                 }
             });
-
             const curlCodes = document.querySelectorAll('.usage-example pre code');
             curlCodes.forEach(element => {
                 const curlCommand = element.textContent;
@@ -116,6 +123,5 @@
         window.initAuth = initAuth;
         window.logout = logout;
     </script>
-    <script type="module" src="app/app.js"></script>
 </body>
 </html>
