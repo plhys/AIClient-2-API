@@ -100,8 +100,12 @@ export async function checkForUpdates() {
         const availableVersions = [...tags, 'HEAD'];
         const latestVersion = tags[0] || 'HEAD';
 
+        // 工业级版本归一化比较 (忽略 v 前缀)
+        const normalize = (v) => v.replace(/^v/, '').trim();
+        const hasUpdate = normalize(localVersion) !== normalize(latestVersion);
+
         return {
-            hasUpdate: localVersion !== latestVersion,
+            hasUpdate,
             localVersion,
             latestVersion,
             availableVersions,
@@ -134,10 +138,13 @@ export async function performUpdate(targetTag = null) {
         
         if (target === 'HEAD') {
             logger.info('[Update] Switching to origin/main (HEAD)...');
+            await execAsync('git fetch origin main');
             await execAsync('git reset --hard origin/main');
         } else {
             logger.info(`[Update] Checking out and resetting to tag: ${target}...`);
-            // 工业级双重保障：checkout + reset --hard
+            // 极客加固：强制清理本地改动，防止 checkout 失败
+            await execAsync('git reset --hard');
+            await execAsync('git clean -fd'); 
             await execAsync(`git checkout ${target}`);
             await execAsync(`git reset --hard ${target}`);
         }
