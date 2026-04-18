@@ -97,7 +97,35 @@ export class ApiServiceAdapter {
     }
 }
 
-// DeepSeek 网页版逆向服务适配器
+// DeepSeek API 服务适配器 (官方)
+export class DeepSeekApiServiceAdapter extends ApiServiceAdapter {
+    constructor(config) {
+        super();
+        this.deepSeekApiService = new DeepSeekApiService(config);
+    }
+
+    async generateContent(model, requestBody) {
+        return this.deepSeekApiService.generateContent(model, requestBody);
+    }
+
+    async *generateContentStream(model, requestBody) {
+        yield* this.deepSeekApiService.generateContentStream(model, requestBody);
+    }
+
+    async listModels() {
+        return this.deepSeekApiService.listModels();
+    }
+
+    async refreshToken() { return Promise.resolve(); }
+    async forceRefreshToken() { return Promise.resolve(); }
+    isExpiryDateNear() { return false; }
+    
+    async getUsageLimits() {
+        return this.deepSeekApiService.getUsageLimits();
+    }
+}
+
+// DeepSeek 网页版逆向服务适配器 (免费)
 export class DeepSeekFreeApiServiceAdapter extends ApiServiceAdapter {
     constructor(config) {
         super();
@@ -823,4 +851,3 @@ export function getServiceAdapter(config) {
     }
     return serviceInstances[providerKey];
 }
-

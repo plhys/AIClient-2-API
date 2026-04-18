@@ -672,7 +672,7 @@ async function openProviderManager(providerType, searchTerm = '') {
  */
 function generateAuthButton(providerType) {
     // 只为支持OAuth的提供商显示授权按钮
-    const oauthProviders = ['gemini-cli-oauth', 'gemini-antigravity', 'openai-qwen-oauth', 'claude-kiro-oauth', 'openai-iflow', 'openai-codex-oauth'];
+    const oauthProviders = ['gemini-cli-oauth', 'gemini-antigravity', 'openai-qwen-oauth', 'claude-kiro-oauth', 'openai-iflow', 'openai-codex-oauth', 'deepseek-free'];
 
     if (!oauthProviders.includes(providerType)) {
         return '';
@@ -785,7 +785,106 @@ async function handleGenerateAuthUrl(providerType) {
         return;
     }
 
+    // 如果是 DeepSeek Free，显示一键捕获说明
+    if (providerType === 'deepseek-free') {
+        showDeepSeekAuthModal(providerType);
+        return;
+    }
+
     await executeGenerateAuthUrl(providerType, {});
+}
+
+/**
+ * 显示 DeepSeek 一键捕获模态框
+ */
+function showDeepSeekAuthModal(providerType) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-magic"></i> DeepSeek 一键登录授权</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 16px; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; font-size: 14px;">
+                    <i class="fas fa-info-circle"></i>
+                    本功能将引导您登录 DeepSeek 官网，并自动为您捕获“白嫖”所需的 User Token。
+                </div>
+                <div class="auth-steps" style="margin-bottom: 20px;">
+                    <div class="step" style="margin-bottom: 10px;">
+                        <strong>第一步：</strong> 点击下方“去登录”按钮，在弹出窗口中完成登录。
+                    </div>
+                    <div class="step" style="margin-bottom: 10px;">
+                        <strong>第二步：</strong> 登录成功后，在 DeepSeek 页面点击我为您准备的【自动捕获】书签/按钮。
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <button id="goToDeepSeek" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 600;">
+                        <i class="fas fa-external-link-alt"></i> 立即去官网登录
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-cancel">取消</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.modal-cancel');
+    const loginBtn = modal.querySelector('#goToDeepSeek');
+    
+    [closeBtn, cancelBtn].forEach(btn => btn.onclick = () => modal.remove());
+    
+    loginBtn.onclick = () => {
+        // 打开 DeepSeek 登录页
+        const authWin = window.open('https://chat.deepseek.com/login', 'DeepSeekAuth', 'width=800,height=600');
+        
+        // 核心：给用户一个“一键捕获”的代码
+        showToast('请注意', '请在登录成功后，手动点击弹出窗顶部的“授权”按钮（或使用书签脚本）', 'info');
+        
+        // 注入捕获提示
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header"><h3>等待捕获中...</h3></div>
+                <div class="modal-body">
+                    <p>请在弹出的 DeepSeek 窗口中完成登录。</p>
+                    <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                        提示：如果自动捕获没触发，请在 DeepSeek 页面控制台粘贴以下代码并回车：<br>
+                        <code style="background:#eee; padding:4px; display:block; margin-top:5px; word-break:break-all;">
+                        fetch('/api/v0/users/current').then(()=> { 
+                            const t = localStorage.getItem('user_token');
+                            window.opener.postMessage({type:'oauth-popup-complete', provider:'deepseek-free', token: t}, '*');
+                        })
+                        </code>
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // 监听回传消息
+        window.addEventListener('message', async function handleMsg(event) {
+            if (event.data?.type === 'oauth-popup-complete' && event.data?.provider === 'deepseek-free') {
+                const token = event.data.token;
+                // 调用后端保存
+                const res = await window.apiClient.post('/oauth/manual-callback', {
+                    provider: 'deepseek-free',
+                    token: token
+                });
+                if (res.success) {
+                    showToast('成功', 'DeepSeek Token 捕获成功并已加入号池！', 'success');
+                    modal.remove();
+                    window.removeEventListener('message', handleMsg);
+                    loadProviders();
+                }
+            }
+        });
+    };
 }
 
 /**

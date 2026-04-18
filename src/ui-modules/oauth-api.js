@@ -1,5 +1,6 @@
 import { getRequestBody } from '../utils/common.js';
 import logger from '../utils/logger.js';
+import { handleDeepSeekAuth } from '../auth/deepseek-oauth.js';
 import {
     handleGeminiCliOAuth,
     handleGeminiAntigravityOAuth,
@@ -56,6 +57,11 @@ export async function handleGenerateAuthUrl(req, res, currentConfig, providerTyp
         } else if (providerType === 'openai-codex-oauth') {
             // Codex OAuth（OAuth2 + PKCE）
             const result = await handleCodexOAuth(currentConfig, options);
+            authUrl = result.authUrl;
+            authInfo = result.authInfo;
+        } else if (providerType === 'deepseek-free') {
+            // DeepSeek 网页版登录捕获
+            const result = await handleDeepSeekAuth(req, res, currentConfig);
             authUrl = result.authUrl;
             authInfo = result.authInfo;
         } else {
@@ -127,6 +133,17 @@ export async function handleManualOAuthCallback(req, res) {
         if (provider === 'openai-codex-oauth' && code && state) {
             const { handleCodexOAuthCallback } = await import('../auth/oauth-handlers.js');
             const result = await handleCodexOAuthCallback(code, state);
+
+            res.writeHead(result.success ? 200 : 500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(result));
+            return true;
+        }
+
+        // 特殊处理 DeepSeek 捕获回调
+        if (provider === 'deepseek-free') {
+            const { handleDeepSeekManualCallback } = await import('../auth/deepseek-oauth.js');
+            const { getProviderPoolManager } = await import('../services/service-manager.js');
+            const result = await handleDeepSeekManualCallback(body, getProviderPoolManager());
 
             res.writeHead(result.success ? 200 : 500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(result));
