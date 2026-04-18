@@ -9,6 +9,7 @@ import { createRequestHandler } from '../handlers/request-handler.js';
 import { getTLSSidecar } from '../utils/tls-sidecar.js';
 import { HEALTH_CHECK } from '../utils/constants.js';
 import { getProviderPoolManager } from './service-manager.js';
+import { isRetryableNetworkError } from '../utils/common.js';
 
 let serverInstance = null;
 let isTaskRunning = {
@@ -39,7 +40,6 @@ function setupSignalHandlers() {
     process.on('uncaughtException', (error) => {
         logger.error('[A-Plan] Uncaught exception:', error);
         // Keep running for retryable errors, else shutdown
-        const { isRetryableNetworkError } = require('../utils/common.js');
         if (!isRetryableNetworkError(error)) {
             gracefulShutdown();
         }
