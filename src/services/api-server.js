@@ -159,6 +159,10 @@ async function bootstrapCore() {
 
     // 核心业务初始化
     const services = await initApiService(CONFIG, true);
+    
+    // 【极客增强】将 Express Router 暴露给全局，支持插件动态挂载路由
+    global.API_ROUTER = services.router;
+
     const heartbeatAndRefreshToken = initializeAPIManagement(services);
     
     // 动态导入请求处理器

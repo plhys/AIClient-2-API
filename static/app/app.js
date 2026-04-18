@@ -211,6 +211,28 @@ function initMobileMenu() {
     });
 }
 
+/**
+ * 检查 Clash 插件状态并控制侧边栏显示
+ */
+async function checkClashPluginStatus() {
+    try {
+        const response = await fetch('/api/plugins');
+        const data = await response.json();
+        const clashPlugin = data.plugins?.find(p => p.name === 'clash-guardian');
+        
+        const clashNav = document.getElementById('nav-item-clash');
+        if (clashNav) {
+            if (clashPlugin && clashPlugin.enabled) {
+                clashNav.style.display = 'flex';
+            } else {
+                clashNav.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to check Clash plugin status:', error);
+    }
+}
+
 // 导出供外部使用的函数
 window.initApp = initApp;
 window.loadProviders = loadProviders;

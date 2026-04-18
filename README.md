@@ -104,6 +104,7 @@ a-plan/
 
 ## 📝 更新日志
 
+- **v4.1.0** - 极客重构：支持原子化插件按需安装、热加载路由，优化 Pod 不稳定环境下的稳定性，新增 Clash 代理管理菜单。
 - **v4.0.2** - 添加项目说明，优化 UI
 - **v4.0.1** - 稳定版发布，支持多渠道管理
 - **v3.0** - 初始版本
@@ -129,4 +130,4 @@ MIT License
 
 ---
 
-*Powered by A-Plan Team & OpenClaw Agent*
+*Powered by A-Plan Team & OpenClaw Agent*Random Number: 0
