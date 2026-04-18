@@ -7,7 +7,6 @@ import {
     batchImportGeminiTokensStream,
     handleQwenOAuth,
     handleKiroOAuth,
-    handleIFlowOAuth,
     handleCodexOAuth,
     batchImportCodexTokensStream,
     batchImportKiroRefreshTokensStream,

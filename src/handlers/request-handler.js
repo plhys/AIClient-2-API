@@ -285,6 +285,17 @@ export function createRequestHandler(config, providerPoolManager) {
                 } catch (error) {
                     handleError(res, error, currentConfig.MODEL_PROVIDER, null, req);
                 }
+            } catch (error) {
+                logger.error(`[Server] Request handler critical error: ${error.message}`, error.stack);
+                if (!res.headersSent) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: {
+                            message: 'Internal Server Error',
+                            details: error.message
+                        }
+                    }));
+                }
             } finally {
                 // Clear request context after request is complete
                 logger.clearRequestContext(requestId);

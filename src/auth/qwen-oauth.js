@@ -3,7 +3,7 @@ import logger from '../utils/logger.js';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import { broadcastEvent } from '../services/ui-manager.js';
+import { broadcastEvent } from '../ui-modules/event-broadcast.js';
 import { autoLinkProviderConfigs } from '../services/service-manager.js';
 import { CONFIG } from '../core/config-manager.js';
 import { getProxyConfigForProvider } from '../utils/proxy-utils.js';

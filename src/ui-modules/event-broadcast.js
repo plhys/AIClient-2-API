@@ -18,10 +18,21 @@ const USAGE_CACHE_FILE = path.join(process.cwd(), 'configs', 'usage-cache.json')
 export function broadcastEvent(eventType, data) {
     if (global.eventClients && global.eventClients.length > 0) {
         const payload = typeof data === 'string' ? data : JSON.stringify(data);
-        global.eventClients.forEach(client => {
-            client.write(`event: ${eventType}\n`);
-            client.write(`data: ${payload}\n\n`);
-        });
+        // 使用 reverse loop 方便删除
+        for (let i = global.eventClients.length - 1; i >= 0; i--) {
+            const client = global.eventClients[i];
+            try {
+                if (client.writableEnded || client.destroyed) {
+                    global.eventClients.splice(i, 1);
+                    continue;
+                }
+                client.write(`event: ${eventType}\n`);
+                client.write(`data: ${payload}\n\n`);
+            } catch (err) {
+                // 写入失败，静默移除客户端，不影响主流程
+                global.eventClients.splice(i, 1);
+            }
+        }
     }
 }
 
