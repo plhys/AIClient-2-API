@@ -1,7 +1,5 @@
 node_modules/
 logs/
-configs/*.json
-!configs/*.example
 *.log
 .DS_Store
 .env
