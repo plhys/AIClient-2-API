@@ -104,10 +104,8 @@ function loadInitialData() {
     }
 }
 
-/**
- * 初始化应用
- */
-function initApp() {
+// 初始化应用逻辑（被 index.html 显式调用以确保顺序）
+export function initApp() {
     // 设置数据加载器
     setDataLoaders(loadInitialData, saveConfiguration);
     
@@ -213,29 +211,8 @@ function initMobileMenu() {
     });
 }
 
-// 等待组件加载完成后初始化应用
-window.addEventListener('componentsLoaded', initApp);
-
-// 如果组件已经加载完成
-// 检查是否有组件已经存在
-document.addEventListener('DOMContentLoaded', () => {
-    // 如果 sidebar 和 content 已经有内容，说明组件已加载
-    const sidebarContainer = document.getElementById('sidebar-container');
-    const contentContainer = document.getElementById('content-container');
-    
-    // 如果容器不存在或为空，说明使用的是组件加载方式，等待 componentsLoaded 事件
-    // 如果容器已有内容，说明是静态 HTML，直接初始化
-    if (sidebarContainer && contentContainer) {
-        const hasContent = sidebarContainer.children.length > 0 || contentContainer.children.length > 0;
-        if (hasContent) {
-            // 静态 HTML 方式，直接初始化
-            initApp();
-        }
-        // 否则等待 componentsLoaded 事件
-    }
-});
-
-// 导出全局函数供其他模块使用
+// 导出供外部使用的函数
+window.initApp = initApp;
 window.loadProviders = loadProviders;
 window.openProviderManager = openProviderManager;
 window.showProviderManagerModal = showProviderManagerModal;

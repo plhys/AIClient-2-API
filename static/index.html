@@ -12,8 +12,10 @@
 </head>
 <body>
     <div class="container">
-        <div id="sidebar-container"></div>
-        <main class="content" role="main" id="content-container"></main>
+        <div class="main-content">
+            <div id="sidebar-container"></div>
+            <main class="content" role="main" id="content-container"></main>
+        </div>
     </div>
     <div id="toastContainer" class="toast-container"></div>
 
@@ -25,6 +27,7 @@
     <script type="module" src="app/models-manager.js"></script>
     <script type="module" src="app/app.js"></script>
     <script type="module">
+        import { initApp } from './app/app.js';
         import { initializeComponents } from './app/component-loader.js';
         import { initI18n, setLanguage, getCurrentLanguage } from './app/i18n.js';
         import { initLanguageSwitcher } from './app/language-switcher.js';
@@ -34,12 +37,23 @@
         setTheme(getCurrentTheme());
         
         (async function() {
-            if (await initAuth()) {
-                await initializeComponents();
-                initThemeSwitcher();
-                initI18n();
-                initLanguageSwitcher();
-                setLanguage(getCurrentLanguage());
+            try {
+                if (await initAuth()) {
+                    // 1. 异步加载 UI 组件片段
+                    await initializeComponents();
+                    
+                    // 2. 核心逻辑初始化（绑定事件监听器）
+                    initApp();
+                    
+                    // 3. 翻译与多语言初始化
+                    initThemeSwitcher();
+                    initI18n();
+                    initLanguageSwitcher();
+                    setLanguage(getCurrentLanguage());
+                    console.log('A-Plan 4.0.1 Stable UI Initialized');
+                }
+            } catch (err) {
+                console.error('UI Initialization Failure:', err);
             }
         })();
         
