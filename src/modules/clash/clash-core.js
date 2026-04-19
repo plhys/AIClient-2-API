@@ -234,9 +234,10 @@ rules:
     async _downloadSubscription() {
         if (!this._config.subUrl) return;
         try {
-            const res = await fetch(this._config.subUrl, { headers: { 'User-Agent': 'ClashMeta' } });
+            const res = await fetch(this._config.subUrl, { headers: { 'User-Agent': 'ClashMeta' }, timeout: 10000 });
             if (res.ok) {
                 let content = await res.text();
+                if (!content || content.length < 10) throw new Error('Subscription content too short');
                 
                 // --- 极客增强：Base64 自动识别与 VLESS 转换 ---
                 if (!content.includes('proxies:') && !content.includes('port:')) {
@@ -279,7 +280,8 @@ rules:
                         tls: query.get('security') === 'tls',
                         'skip-cert-verify': true,
                         servername: query.get('sni') || url.hostname,
-                        network: query.get('type') || 'tcp'
+                        network: query.get('type') || 'tcp',
+                        'client-fingerprint': 'chrome' // 极客补强：增加浏览器指纹模拟，提高优选节点通过率
                     };
                     if (query.get('type') === 'ws') {
                         p['ws-opts'] = { 

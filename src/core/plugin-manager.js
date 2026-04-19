@@ -71,9 +71,23 @@ class PluginManager {
     async initAll(config) {
         this.globalConfig = config;
         
-        // --- 幽灵模式优化：跳过非核心插件加载 ---
+        // --- 幽灵模式优化：跳过非核心插件加载，但保留鉴权等核心插件 ---
         if (process.env.GHOST_MODE === 'true') {
-            logger.info('[PluginManager] Ghost mode active, skipping non-core plugin loading.');
+            logger.info('[PluginManager] Ghost mode active, only loading core plugins (auth).');
+            // 只加载鉴权相关的核心插件，确保 API 安全
+            await this.loadConfig();
+            for (const [name, pConfig] of Object.entries(this.pluginsConfig.plugins)) {
+                if (pConfig.enabled === true && (name === 'default-auth' || name.includes('auth'))) {
+                    const entryPath = path.join(pluginsDir, name, 'index.js');
+                    if (existsSync(entryPath)) {
+                        const pluginModule = await import(`file://${entryPath}?boot=${Date.now()}`);
+                        const plugin = pluginModule.default || pluginModule;
+                        this.plugins.set(name, plugin);
+                        if (typeof plugin.init === 'function') await plugin.init(this.globalConfig);
+                        plugin._enabled = true;
+                    }
+                }
+            }
             this.initialized = true;
             return;
         }
