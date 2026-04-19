@@ -104,6 +104,7 @@ a-plan/
 
 ## 📝 更新日志
 
+- **v4.2.5** - Environment Compatibility: POSIX-compliant `start.sh` for multi-shell support, refined logging semantics, and full-stack version alignment.
 - **v4.2.4** - Survivability Boost: JIT token refresh, 60s silent startup, 404/400 error filtering to prevent provider 'poisoning', 2-min node auto-recovery, and semantic error reporting.
 - **v4.1.0** - Geek Refactor: Atomized plugins, hot-routing, Pod stability optimizations, and Clash management menu.
 - **v4.0.2** - 添加项目说明，优化 UI

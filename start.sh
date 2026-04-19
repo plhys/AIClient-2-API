@@ -1,7 +1,8 @@
 #!/bin/bash
-# A计划 v3.0 - 极速启动与高可用守护脚本 (A-Plan Boot & Guardian)
+# A计划 v4.2.5 - 极速启动与高可用守护脚本 (A-Plan Boot & Guardian)
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# 使用 POSIX 兼容的方式获取目录，确保在 /bin/sh (如 dash) 中也能正确运行
+DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
 # [极客设置] 默认开启极速模式 (可被环境变量覆盖)
@@ -9,7 +10,7 @@ export CORE_ONLY=${CORE_ONLY:-false}
 export AUTO_SYNC=${AUTO_SYNC:-true}
 
 echo "=========================================="
-echo "   🚀 A计划 (A-Plan) v3.0 - Booting"
+echo "   🚀 A计划 (A-Plan) v4.2.5 - Booting"
 echo "   Mode: $( [ "$CORE_ONLY" = "true" ] && echo "LITE (Core Engine)" || echo "FULL (All Features)" )"
 echo "=========================================="
 
@@ -17,11 +18,12 @@ echo "=========================================="
 if [ -d ".git" ]; then
     (
         echo "[Sync] 后台检查远程更新..."
-        git pull origin main > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
+        # 预先检查远程仓库是否可达，防止卡死
+        if git ls-remote origin HEAD > /dev/null 2>&1; then
+            git pull origin main > /dev/null 2>&1
             echo "[Sync] 远程配置已就绪。"
         else
-            echo "[!] 远程同步跳过 (网络或冲突)。"
+            echo "[!] 远程同步跳过 (网络或仓库不可达)。"
         fi
     ) &
 fi
@@ -57,13 +59,17 @@ if [ "$AUTO_SYNC" = "true" ]; then
         echo "[Sync] 配置自动备份已开启..."
         while true; do
             sleep 600
-            # 仅在有变动时 Push
-            if [[ -n $(git status --porcelain configs/) ]]; then
+            # 使用 POSIX 兼容的测试语法
+            CHANGES=$(git status --porcelain configs/)
+            if [ -n "$CHANGES" ]; then
                 echo "[Sync] $(date '+%H:%M:%S') 检测到配置变更，正在推送到云端..."
                 git add configs/*.json pwd > /dev/null 2>&1
                 git commit -m "Auto-sync: Remote config backup" > /dev/null 2>&1
-                git push origin main > /dev/null 2>&1
-                echo "[Sync] 云端备份完成。"
+                if git push origin main > /dev/null 2>&1; then
+                    echo "[Sync] 云端备份完成。"
+                else
+                    echo "[!] 云端备份推送失败。"
+                fi
             fi
         done
     ) &

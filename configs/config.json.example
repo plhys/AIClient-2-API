@@ -50,7 +50,7 @@
         "targetModel": "gemini-claude-sonnet-4-5"
       }
     },
-    "PROXY_URL": null,
+    "PROXY_URL": "http://127.0.0.1:7890",
     "PROXY_ENABLED_PROVIDERS": [
             "gemini-cli-oauth",
             "gemini-antigravity"
