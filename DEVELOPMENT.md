@@ -12,7 +12,9 @@
 
 ### 🛠️ 本次核心更新
 1.  **Ghost Mode (幽灵启动)**：环境变量 `GHOST_MODE=true` 可秒级拉起 API，专为 Pod 调度而生。
-2.  **Regional Routing (代理分流塔)**：Clash 模块不再盲目抢占控制权，支持 Provider 级的语义化地区路由。
+2.  **Regional Routing & Hot-Swap (解耦手术)**：
+    - **成果**：彻底锯断 API 核心对 Clash 模块的硬编码依赖。若 `src/modules/clash` 缺失，核心服务依然稳如泰山，实现了真正的“选装件”架构。
+    - **路由**：支持 Provider 级的语义化地区路由（如：`gemini -> US`）。
 3.  **Plugin Clean Uninstall (插件净空)**：修复了由于残留配置导致的“目录名称无效”自愈失败 Bug。
 
 ---

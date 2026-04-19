@@ -15,7 +15,25 @@ import {
 } from '../utils/provider-utils.js';
 import { MODEL_PROVIDER } from '../utils/constants.js';
 
-import { clashModule } from '../modules/clash/clash-core.js';
+// --- 极客重构：模块热插拔感知层 ---
+let clashModule = null;
+const CLASH_MODULE_PATH = path.join(process.cwd(), 'src', 'modules', 'clash', 'clash-core.js');
+
+// 动态加载逻辑：只在文件真实存在时才引入，彻底锯断硬编码依赖
+async function getClashModule() {
+    if (clashModule) return clashModule;
+    if (fs.existsSync(CLASH_MODULE_PATH)) {
+        try {
+            const mod = await import('../modules/clash/clash-core.js');
+            clashModule = mod.clashModule;
+            return clashModule;
+        } catch (e) {
+            logger.warn('[Module-Loader] Failed to hot-load Clash module:', e.message);
+        }
+    }
+    return null;
+}
+// ---------------------------------
 
 // 存储 ProviderPoolManager 实例
 let providerPoolManager = null;
@@ -284,8 +302,10 @@ export async function initApiService(config, isReady = false) {
         });
         logger.info('[Initialization] ProviderPoolManager initialized.');
         
-        // --- 初始化 Clash 核心模块 (极客模式：默认跳过，由插件或手动开启) ---
-        // clashModule.init().catch(e => logger.error('[Clash-Module] Start Failed:', e.message));
+        // --- 初始化 Clash 核心模块 (极客模式：仅当模块存在时执行) ---
+        getClashModule().then(cm => {
+            if (cm) cm.init().catch(e => logger.error('[Clash-Module] Auto-Init Failed:', e.message));
+        });
     }
 
     if (config.providerPools && Object.keys(config.providerPools).length > 0) {
@@ -513,10 +533,12 @@ export async function getApiServiceWithFallback(config, requestedModel = null, o
                 serviceConfig.MODEL_PROVIDER = actualProviderType;
             }
 
-            // --- 执行 Clash 模块分流中间件 ---
-            // 注意：现在中间件会根据 serviceConfig.MODEL_PROVIDER 自动查找 routing 配置
-            const clashMiddleware = clashModule.getMiddleware();
-            await clashMiddleware(serviceConfig);
+            // --- 执行 Clash 模块分流中间件 (热插拔安全网) ---
+            const cm = await getClashModule();
+            if (cm) {
+                const clashMiddleware = cm.getMiddleware();
+                await clashMiddleware(serviceConfig);
+            }
         } else {
             const errorMsg = `[API Service] No healthy provider found in pool for ${config.MODEL_PROVIDER}${actualModelName ? ` supporting model: ${actualModelName}` : ''}`;
             logger.error(errorMsg);
