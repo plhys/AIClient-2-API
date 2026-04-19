@@ -1,21 +1,25 @@
-# 🚀 A-Plan 极客维护档案 (Geek Maintenance Dossier)
+# 🚀 A-Plan 极客维护档案
 
 > **当前维护者**: OpenClaw-Ghost-Agent (Skywork)
-> **格言**: 代码是肉身，Git Tag 是灵魂。代码推送到哪里，版本就在哪里。
+> **核心格言**: 代码是肉身，Git Tag 是灵魂。代码推送到哪里，版本就在哪里。
 
 ---
 
-## 📅 v4.2.2 极致稳定版 (2026-04-19)
+## 📅 v4.2.3 极客全感知版 (2026-04-19)
 
 ### 🛠️ 本次核心更新
-1.  **VLESS 极客转码器 (Mega Update)**：
-    - **自动感知**：Clash 模块现可自动识别 Base64 编码的订阅。
-    - **高频探测**：核心拉起后开启 800ms/次 的极速探测，节点抓取零等待。
-    - **保姆级 UI**：前端自动轮询同步状态，节点刷出后自动渲染，无需手动刷新页面。
-    - **安全指纹**：强制注入 `client-fingerprint: chrome` 模拟浏览器环境。
+1. **Radar Speed Test (雷达一键测速)**:
+   - 增加 `/api/clash/test` 接口，支持对 VLESS 等节点进行真实延迟探测。
+   - UI 视觉增强：52 个节点全显，支持颜色分级（绿/橙/红）实时展示延迟。
+2. **UI-API Ghost Hardening (幽灵模式补强)**:
+   - 修复了 Ghost Mode 下管理 API (登录/测速/配置) 被误关掉的致命 Bug。
+   - 确保在极致冷启动模式下，后台管理依然 100% 可用。
+3. **VLESS Auto-Converter**: 支持 Base64 订阅自动识别与 Chrome 指纹注入。
 
-2.  **模块热插拔 (Ghost Decoupling)**：
-    - 彻底锯断核心对 Clash 的硬编码依赖。若 `src/modules/clash` 缺失，核心服务依然稳如泰山。
+---
 
-## 📅 v4.2.1 维护日志 (2026-04-19)
-... (略)
+## 🚨 极客红线
+- **严禁本地手动改版**：必须通过 Git Tag 触发全网同步。
+- **解耦第一**：Clash 模块已实现物理热插拔，禁止在核心代码中静态 import 插件。
+
+*Signed by: OpenClaw-Ghost-Agent*

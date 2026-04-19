@@ -223,11 +223,29 @@ rules:
                 const nodeList = [];
                 for (const [name, info] of Object.entries(data.proxies || {})) {
                     if (['Selector', 'URLTest', 'Direct', 'Reject', 'Compatible'].includes(info.type)) continue;
-                    nodeList.push({ name, type: info.type });
+                    nodeList.push({ 
+                        name, 
+                        type: info.type, 
+                        delay: info.history && info.history.length > 0 ? info.history[info.history.length-1].delay : 0 
+                    });
                 }
                 if (nodeList.length > 0) this._nodes = nodeList;
             }
         } catch(e) {}
+    }
+
+    async testDelay(name) {
+        if (!this._config.enabled) return 0;
+        try {
+            const url = `http://127.0.0.1:${this._config.controllerPort}/proxies/${encodeURIComponent(name)}/delay?timeout=5000&url=http://www.gstatic.com/generate_204`;
+            const res = await fetch(url, { headers: { 'Authorization': `Bearer ${this._config.secret}` } });
+            if (res.ok) {
+                const data = await res.json();
+                return data.delay || 0;
+            }
+        } catch (e) {
+            return 0;
+        }
     }
 
     async updateConfig(newConfig) {

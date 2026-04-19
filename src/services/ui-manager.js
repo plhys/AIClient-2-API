@@ -180,6 +180,19 @@ export async function handleUIApiRequests(method, pathParam, req, res, currentCo
             res.end(JSON.stringify({ success: true }));
             return true;
         }
+        if (pathParam === '/api/clash/test' && method === 'POST') {
+            const body = await new Promise(r => { 
+                let b=''; 
+                req.on('data', c=>b+=c); 
+                req.on('end', () => {
+                    try { r(JSON.parse(b)); } catch(e) { r({}); }
+                }); 
+            });
+            const delay = await cm.testDelay(body.name);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ delay }));
+            return true;
+        }
     }
 
     // Update configuration

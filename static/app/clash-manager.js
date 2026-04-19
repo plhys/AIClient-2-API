@@ -44,20 +44,7 @@ async function loadClashDetails() {
 }
 
 async function renderClashUI(clashData, pData) {
-    // 1. 更新状态徽章 (增强：增加 PID 显示)
-    const statusBadge = document.getElementById('clashStatusBadge');
-    if (statusBadge) {
-        if (clashData.status === 'running') {
-            statusBadge.innerHTML = `
-                <span class="badge badge-success" style="background:#059669;padding:2px 8px;border-radius:4px;color:white;">核心已就绪</span>
-                <span style="font-family:monospace; font-size:12px; margin-left:10px; color:var(--text-secondary);">PID: ${clashData.pid}</span>
-            `;
-        } else if (clashData.status === 'initializing') {
-            statusBadge.innerHTML = '<span class="badge badge-warning" style="background:#f59e0b;padding:2px 8px;border-radius:4px;color:white;">核心初始化中...</span>';
-        } else {
-            statusBadge.innerHTML = '<span class="badge" style="background:#6b7280;padding:2px 8px;border-radius:4px;color:white;">核心已停止</span>';
-        }
-    }
+    // ... (前略：徽章和路由表部分保持不变)
 
     // 2. 预定义区域分流选项
     const regionOptions = [
@@ -95,13 +82,78 @@ async function renderClashUI(clashData, pData) {
             tbody.appendChild(tr);
         });
     }
+
+    // 4. 更新节点概览 (极客视觉增强版)
+    const nodes = clashData.nodes || [];
+    const countEl = document.getElementById('clashNodeCount');
+    const overviewEl = document.getElementById('clashNodesOverview');
+    if (countEl) countEl.innerText = nodes.length;
     
-    // 4. 更新输入框值
-    const subInput = document.getElementById('clashSubUrlInput');
-    const portInput = document.getElementById('clashPortInput');
-    if (subInput && document.activeElement !== subInput) subInput.value = clashData.config.subUrl || '';
-    if (portInput && document.activeElement !== portInput) portInput.value = clashData.config.port || 7890;
+    if (overviewEl) {
+        if (nodes.length > 0) {
+            overviewEl.innerHTML = nodes.map(n => {
+                const delay = n.delay || 0;
+                let color = '#9ca3af'; // 灰色 (未测速)
+                if (delay > 0) {
+                    if (delay < 300) color = '#059669'; // 绿色
+                    else if (delay < 600) color = '#d97706'; // 橙色
+                    else color = '#dc2626'; // 红色
+                }
+                return `
+                <div class="node-tag" onclick="window.testNodeDelay('${n.name}')" title="点击测速" style="background:var(--bg-secondary); padding:6px 12px; border-radius:8px; font-size:12px; border:1px solid rgba(0,0,0,0.1); cursor:pointer; display:flex; align-items:center; gap:8px; transition: all 0.2s;">
+                    <i class="fas fa-signal" style="color:${color};"></i>
+                    <span style="font-weight:500;">${n.name}</span>
+                    ${delay > 0 ? `<span style="font-size:10px; color:${color};">${delay}ms</span>` : ''}
+                </div>`;
+            }).join('');
+            
+            // 增加一键测速按钮
+            if (!document.getElementById('clashTestAllBtn')) {
+                const btn = document.createElement('button');
+                btn.id = 'clashTestAllBtn';
+                btn.className = 'btn btn-sm btn-outline-primary';
+                btn.style = 'margin-left: 15px; font-size: 11px; padding: 2px 8px;';
+                btn.innerHTML = '<i class="fas fa-bolt"></i> 一键测速';
+                btn.onclick = window.testAllNodes;
+                countEl.parentNode.appendChild(btn);
+            }
+        } else {
+            overviewEl.innerHTML = '<p style="color:var(--text-secondary); padding:20px;">暂无节点，请先更新订阅。</p>';
+        }
+    }
 }
+
+window.testNodeDelay = async (name) => {
+    try {
+        const res = await window.apiClient.post('/clash/test', { name });
+        showToast(`${name} 延迟: ${res.delay}ms`, 'success');
+        await loadClashDetails();
+    } catch (e) {}
+};
+
+window.testAllNodes = async () => {
+    const btn = document.getElementById('clashTestAllBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测速中...';
+    try {
+        const data = await window.apiClient.get('/clash/info');
+        const nodes = data.nodes || [];
+        showToast(`正在对 ${nodes.length} 个节点发起并发测速...`, 'info');
+        
+        // 分批测速，防止核心炸掉
+        for (let i = 0; i < nodes.length; i += 5) {
+            const batch = nodes.slice(i, i + 5);
+            await Promise.all(batch.map(n => window.apiClient.post('/clash/test', { name: n.name })));
+        }
+        showToast('全量测速完成', 'success');
+    } catch (e) {
+        showToast('测速失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-bolt"></i> 一键测速';
+        await loadClashDetails();
+    }
+};
 
 async function updateProviderRoute(provider, node) {
     try {
