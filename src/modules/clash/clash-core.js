@@ -99,10 +99,17 @@ class ClashModule {
                 const trimmed = line.trim();
                 if (trimmed === 'proxies:') { inProxies = true; continue; }
                 if (inProxies) {
+                    // 遇到 proxy-groups 标记说明 proxies 区域结束
+                    if (trimmed === 'proxy-groups:') {
+                        inProxies = false;
+                        continue;
+                    }
                     if (line.length > 0 && !line.startsWith(' ') && !line.startsWith('-')) {
                         inProxies = false;
                         continue;
                     }
+                    // 忽略不含 type 字段的行（非有效proxy）
+                    if (!trimmed.includes('type:')) continue;
                     if (trimmed.includes('name: DIRECT') || trimmed.includes('name: "DIRECT"')) continue;
                     const match = trimmed.match(/name:\s*"?([^",{}]+)"?/);
                     if (match) {
