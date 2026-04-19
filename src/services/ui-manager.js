@@ -15,12 +15,21 @@ import * as customModelsApi from '../ui-modules/custom-models-api.js';
 import * as eventBroadcast from '../ui-modules/event-broadcast.js';
 // --- 极客重构：模块热插拔感知层 ---
 let clashModule = null;
+let shadowProxy = null;
 async function getClashModule() {
     if (clashModule) return clashModule;
     try {
         const mod = await import('../modules/clash/clash-core.js');
         clashModule = mod.clashModule;
         return clashModule;
+    } catch (e) { return null; }
+}
+async function getShadowProxy() {
+    if (shadowProxy) return shadowProxy;
+    try {
+        const mod = await import('../modules/proxy-shadow/shadow-core.js');
+        shadowProxy = mod.shadowProxy;
+        return shadowProxy;
     } catch (e) { return null; }
 }
 // ---------------------------------
@@ -140,6 +149,76 @@ export async function handleUIApiRequests(method, pathParam, req, res, currentCo
         return await configApi.handleGetConfig(req, res, currentConfig);
     }
     
+    // Shadow Proxy 影子代理管理路由 (v4.2.6 极客定制版)
+    if (pathParam.startsWith('/api/shadow-proxy/')) {
+        const sp = await getShadowProxy();
+        if (!sp) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: { message: 'Shadow proxy module not installed' } }));
+            return true;
+        }
+
+        // 4.2.6 极客补强：路由绑定接口
+        if (pathParam === '/api/shadow-proxy/route' && method === 'POST') {
+            const body = await new Promise(r => { 
+                let b=''; req.on('data', c=>b+=c); req.on('end', () => { try { r(JSON.parse(b)); } catch(e) { r({}); } }); 
+            });
+            if (body.provider && body.nodeId) {
+                const spMod = await getShadowProxy();
+                spMod.updateRoute(body.provider, body.nodeId);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+                return true;
+            }
+        }
+
+        if (pathParam === '/api/shadow-proxy/config' && method === 'POST') {
+            const body = await new Promise(r => { 
+                let b=''; req.on('data', c=>b+=c); req.on('end', () => { try { r(JSON.parse(b)); } catch(e) { r({}); } }); 
+            });
+            const spMod = await getShadowProxy();
+            if (typeof body.enabled !== 'undefined') {
+                spMod._config.enabled = body.enabled;
+                if (body.enabled) await spMod.start();
+                else spMod._stopExisting();
+            }
+            spMod._saveConfig();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+            return true;
+        }
+
+        if (pathParam === '/api/shadow-proxy/info') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(sp.getStatus()));
+            return true;
+        }
+
+        if (pathParam === '/api/shadow-proxy/test-ai' && method === 'POST') {
+            const spMod = await getShadowProxy();
+            spMod.runAIRadar().catch(e => logger.error('[Radar] Error:', e.message));
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: 'AI Radar scanning in background' }));
+            return true;
+        }
+        
+        // 4.2.6 极客补强：添加订阅接口
+        if (pathParam === '/api/shadow-proxy/subscription' && method === 'POST') {
+            const body = await new Promise(r => { 
+                let b=''; req.on('data', c=>b+=c); req.on('end', () => { try { r(JSON.parse(b)); } catch(e) { r({}); } }); 
+            });
+            if (body.url) {
+                const spMod = await getShadowProxy();
+                spMod._config.subscriptions.push({ url: body.url, name: body.name || 'New Sub' });
+                spMod._saveConfig();
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+                return true;
+            }
+        }
+        // ... 后续增加订阅管理、路由绑定、AI 测速等接口
+    }
+
     // Clash 模块管理路由 (极客热插拔增强版)
     if (pathParam.startsWith('/api/clash/')) {
         const cm = await getClashModule();

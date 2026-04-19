@@ -1,6 +1,6 @@
 {
     "REQUIRED_API_KEY": "123456",
-    "SERVER_PORT": 3000,
+    "SERVER_PORT": 18781,
     "HOST": "0.0.0.0",
     "MODEL_PROVIDER": "gemini-cli-oauth",
     "SYSTEM_PROMPT_FILE_PATH": "configs/input_system_prompt.txt",
@@ -22,6 +22,8 @@
     "GROK_CF_CLEARANCE": "your-cf-clearance-cookie",
     "GROK_USER_AGENT": "Mozilla/5.0 ...",
     "GROK_BASE_URL": "https://grok.com",
+    "NVIDIA_API_KEY": "nvapi-...",
+    "NVIDIA_BASE_URL": "https://integrate.api.nvidia.com/v1",
     "providerFallbackChain": {
       "gemini-cli-oauth": ["gemini-antigravity"],
       "gemini-antigravity": ["gemini-cli-oauth"],

@@ -32,7 +32,7 @@ export const NETWORK = {
     // 最大端口号
     MAX_PORT: 65535,
     // 默认服务器端口
-    DEFAULT_PORT: 3000
+    DEFAULT_PORT: 18781
 };
 
 // 请求重试相关常量
@@ -50,7 +50,10 @@ export const MODEL_PROTOCOL_PREFIX = {
     CODEX: 'codex',
     FORWARD: 'forward',
     GROK: 'grok',
-    DEEPSEEK: 'deepseek',
+    NVIDIA: 'nvidia',
+    GROQ: 'groq',
+    SAMBANOVA: 'sambanova',
+    GITHUB: 'github'
 };
 
 // 提供商标识符常量
@@ -65,6 +68,9 @@ export const MODEL_PROVIDER = {
     CODEX_API: 'openai-codex-oauth',
     FORWARD_API: 'forward-api',
     GROK_CUSTOM: 'grok-custom',
-    DEEPSEEK_FREE: 'deepseek-free',
+    NVIDIA_NIM: 'nvidia-nim',
+    GROQ_API: 'groq-api',
+    SAMBANOVA_API: 'sambanova-api',
+    GITHUB_MODELS: 'github-models',
     AUTO: 'auto',
 };

@@ -104,6 +104,7 @@ a-plan/
 
 ## 📝 更新日志
 
+- **v4.2.6** - Geek Overhaul: Eradicated hardcoded '3000' zombie config and synchronized server startup logic for Port 18781. Evolution of providers: swapped DeepSeek with native Nvidia NIM support. Unified core logic and removed legacy reverse-proxy modules for extreme lightness. Integrated **Groq**, **SambaNova**, and **Github Models** for lightning-fast inference and robust failover.
 - **v4.2.5** - Environment Compatibility: POSIX-compliant `start.sh` for multi-shell support, refined logging semantics, and full-stack version alignment.
 - **v4.2.4** - Survivability Boost: JIT token refresh, 60s silent startup, 404/400 error filtering to prevent provider 'poisoning', 2-min node auto-recovery, and semantic error reporting.
 - **v4.1.0** - Geek Refactor: Atomized plugins, hot-routing, Pod stability optimizations, and Clash management menu.

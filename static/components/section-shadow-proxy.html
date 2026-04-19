@@ -1,0 +1,82 @@
+<section id="section-shadow-proxy" class="app-section">
+    <div class="section-header">
+        <h2><i class="fas fa-ghost"></i> 影子代理 (Shadow Proxy) <span class="badge" id="proxy-status">OFF</span></h2>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.shadowProxyManager.refresh()"><i class="fas fa-sync"></i> 刷新</button>
+            <button class="btn btn-primary" onclick="window.shadowProxyManager.openAddSub()"><i class="fas fa-plus"></i> 添加订阅</button>
+        </div>
+    </div>
+
+    <div class="card proxy-stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <label>影子端口</label>
+                <span id="proxy-active-port">9700</span>
+            </div>
+            <div class="stat-item">
+                <label>核心进程 (PID)</label>
+                <span id="proxy-pid">N/A</span>
+            </div>
+            <div class="stat-item">
+                <label>活跃订阅</label>
+                <span id="proxy-sub-count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 路由矩阵 -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-route"></i> AI 供应商专线分流 (Provider Routing Matrix)</h3>
+        </div>
+        <div class="matrix-table-wrapper">
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th>供应商 (Provider)</th>
+                        <th>分配节点 (Assigned Node)</th>
+                        <th>状态 (Status)</th>
+                    </tr>
+                </thead>
+                <tbody id="proxy-routing-matrix">
+                    <!-- 动态加载 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 节点列表 -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-server"></i> 影子出口节点 (Outbound Nodes)</h3>
+            <div class="header-filters">
+                <button class="btn btn-sm" onclick="window.shadowProxyManager.testAllAI()"><i class="fas fa-bolt"></i> AI 雷达全扫描</button>
+            </div>
+        </div>
+        <div class="node-grid" id="proxy-node-list">
+            <!-- 动态加载 -->
+        </div>
+    </div>
+</section>
+
+<style>
+.matrix-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.matrix-table th, .matrix-table td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.matrix-table select { background: #1a1a1a; color: #eee; border: 1px solid #333; padding: 5px; border-radius: 4px; width: 250px; }
+
+.node-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px; }
+.node-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; transition: all 0.3s; }
+.node-card:hover { border-color: #007bff; background: rgba(255,255,255,0.05); }
+.node-card h4 { margin: 0 0 10px 0; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.latency-badges { display: flex; gap: 8px; font-size: 0.75em; flex-wrap: wrap; }
+.latency-badge { padding: 3px 8px; border-radius: 4px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+.latency-badge i { margin-right: 4px; }
+.latency-low { color: #28a745; border-color: #28a745; }
+.latency-med { color: #ffc107; border-color: #ffc107; }
+.latency-high { color: #dc3545; border-color: #dc3545; }
+
+.badge-openai { border-left: 3px solid #10a37f; }
+.badge-claude { border-left: 3px solid #d97757; }
+.badge-gemini { border-left: 3px solid #4285f4; }
+</style>

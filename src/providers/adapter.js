@@ -8,7 +8,7 @@ import { QwenApiService } from './openai/qwen-core.js';
 import { CodexApiService } from './openai/codex-core.js';
 import { ForwardApiService } from './forward/forward-core.js';
 import { GrokApiService } from './grok/grok-core.js';
-import { DeepSeekChatService } from './deepseek/deepseek-chat.js';
+import { NvidiaApiService } from './nvidia/nvidia-core.js';
 import { MODEL_PROVIDER } from '../utils/constants.js';
 import logger from '../utils/logger.js';
 
@@ -95,28 +95,23 @@ export class ApiServiceAdapter {
     }
 }
 
-// DeepSeek 网页版逆向服务适配器 (免费)
-export class DeepSeekFreeApiServiceAdapter extends ApiServiceAdapter {
+// NVIDIA NIM API 服务适配器
+export class NvidiaNimApiServiceAdapter extends ApiServiceAdapter {
     constructor(config) {
         super();
-        this.deepSeekChatService = new DeepSeekChatService(config);
+        this.nvidiaApiService = new NvidiaApiService(config);
     }
 
     async generateContent(model, requestBody) {
-        // 非流式也走流式聚合
-        let fullContent = '';
-        for await (const chunk of this.deepSeekChatService.generateContentStream(model, requestBody)) {
-            fullContent += chunk.choices[0].delta.content || '';
-        }
-        return { choices: [{ message: { content: fullContent } }] };
+        return this.nvidiaApiService.generateContent(model, requestBody);
     }
 
     async *generateContentStream(model, requestBody) {
-        yield* this.deepSeekChatService.generateContentStream(model, requestBody);
+        yield* this.nvidiaApiService.generateContentStream(model, requestBody);
     }
 
     async listModels() {
-        return { data: [{ id: 'deepseek-chat-free' }] };
+        return this.nvidiaApiService.listModels();
     }
 
     async refreshToken() { return Promise.resolve(); }
@@ -670,7 +665,10 @@ registerAdapter(MODEL_PROVIDER.ANTIGRAVITY, AntigravityApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.KIRO_API, KiroApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.CODEX_API, CodexApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.GROK_CUSTOM, GrokApiServiceAdapter);
-registerAdapter(MODEL_PROVIDER.DEEPSEEK_FREE, DeepSeekFreeApiServiceAdapter);
+registerAdapter(MODEL_PROVIDER.NVIDIA_NIM, NvidiaNimApiServiceAdapter);
+registerAdapter(MODEL_PROVIDER.GROQ_API, OpenAIApiServiceAdapter);
+registerAdapter(MODEL_PROVIDER.SAMBANOVA_API, OpenAIApiServiceAdapter);
+registerAdapter(MODEL_PROVIDER.GITHUB_MODELS, OpenAIApiServiceAdapter);
 // registerAdapter(MODEL_PROVIDER.FORWARD_API, ForwardApiServiceAdapter);
 // registerAdapter(MODEL_PROVIDER.QWEN_API, QwenApiServiceAdapter);
 // registerAdapter(MODEL_PROVIDER.CODEX_API, CodexApiServiceAdapter);

@@ -55,7 +55,10 @@ export class ProviderPoolManager {
         'openai-codex-oauth': 'gpt-5-codex-mini',
         'openaiResponses-custom': 'gpt-4o-mini',
         'forward-api': 'gpt-4o-mini',
-        'deepseek-free': 'deepseek-chat',
+        'nvidia-nim': 'meta/llama-3.1-70b-instruct',
+        'groq-api': 'llama3-70b-8192',
+        'sambanova-api': 'Meta-Llama-3.1-70B-Instruct',
+        'github-models': 'gpt-4o'
     };
 
     constructor(providerPools, options = {}) {

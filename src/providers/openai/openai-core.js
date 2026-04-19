@@ -8,12 +8,22 @@ import { isRetryableNetworkError, MODEL_PROVIDER } from '../../utils/common.js';
 // Assumed OpenAI API specification service for interacting with third-party models
 export class OpenAIApiService {
     constructor(config) {
-        if (!config.OPENAI_API_KEY) {
-            throw new Error("OpenAI API Key is required for OpenAIApiService.");
+        // 4.2.6 极客增强：自动探测 API Key，优先尝试特定供应商前缀，其次尝试通用 Key
+        this.apiKey = config.apiKey || config.OPENAI_API_KEY || config.GROQ_API_KEY || config.SAMBANOVA_API_KEY || config.GITHUB_TOKEN;
+        
+        if (!this.apiKey) {
+            throw new Error(`API Key is required for OpenAI-compatible service (${config.MODEL_PROVIDER}).`);
         }
         this.config = config;
-        this.apiKey = config.OPENAI_API_KEY;
-        this.baseUrl = config.OPENAI_BASE_URL;
+        this.baseUrl = config.baseUrl || config.OPENAI_BASE_URL;
+        
+        // 自动补全常用供应商的 Base URL
+        if (!this.baseUrl) {
+            if (config.MODEL_PROVIDER === 'groq-api') this.baseUrl = 'https://api.groq.com/openai/v1';
+            else if (config.MODEL_PROVIDER === 'sambanova-api') this.baseUrl = 'https://api.sambanova.ai/v1';
+            else if (config.MODEL_PROVIDER === 'github-models') this.baseUrl = 'https://models.inference.ai.azure.com';
+        }
+
         this.useSystemProxy = config?.USE_SYSTEM_PROXY_OPENAI ?? false;
         logger.info(`[OpenAI] System proxy ${this.useSystemProxy ? 'enabled' : 'disabled'}`);
 

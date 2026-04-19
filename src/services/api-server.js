@@ -85,8 +85,22 @@ function setupSignalHandlers() {
  * 4.0 幽灵架构：启动函数
  */
 async function startServer() {
-    // 1. 预解析基础配置（端口和主机），不进行深层初始化
-    const PORT = parseInt(process.env.SERVER_PORT || process.env.PORT) || 3000;
+    // 4.2.6 极客适配：在抢占端口前，优先尝试预加载基础配置，确保 PORT 意图正确
+    const configPath = 'configs/config.json';
+    let PRE_PORT = parseInt(process.env.A_PORT || process.env.SERVER_PORT || process.env.PORT);
+
+    if (isNaN(PRE_PORT)) {
+        try {
+            if (fs.existsSync(configPath)) {
+                const preConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                PRE_PORT = preConfig.SERVER_PORT;
+            }
+        } catch (e) {
+            // 忽略读取错误，回退到默认
+        }
+    }
+
+    const PORT = PRE_PORT || 18781;
     const HOST = process.env.HOST || '0.0.0.0';
 
     // 2. 立即创建 HTTP 实例并监听端口 (V2 般的秒开感)

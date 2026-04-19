@@ -83,8 +83,8 @@ import {
 } from './tutorial-manager.js';
 
 import {
-    initClashManager
-} from './clash-manager.js';
+    initShadowProxyManager
+} from './shadow-proxy-manager.js';
 
 import {
     CustomModelsManager
@@ -97,6 +97,9 @@ function loadInitialData() {
     loadSystemInfo();
     loadProviders();
     loadConfiguration();
+    if (window.shadowProxyManager) {
+        window.shadowProxyManager.init();
+    }
     if (window.customModelsManager) {
         window.customModelsManager.load();
     }
@@ -123,10 +126,8 @@ export function initApp() {
     initImageZoom();
     initPluginManager();
     initTutorialManager();
-    initClashManager();
-    
-    // 初始化 Clash 模块控制 (内建)
-    initClashModuleControl();
+    initShadowProxyManager();
+    initShadowProxyControl();
     
     window.customModelsManager = new CustomModelsManager();
     initMobileMenu();
@@ -140,34 +141,24 @@ export function initApp() {
 /**
  * 初始化 Clash 模块开关逻辑 (内建)
  */
-async function initClashModuleControl() {
+async function initShadowProxyControl() {
     try {
-        const data = await window.apiClient.get('/clash/info');
-        const toggle = document.getElementById('clashModuleToggle');
+        const response = await fetch('/api/shadow-proxy/info');
+        const data = await response.json();
+        const toggle = document.getElementById('shadowProxyToggle');
         if (toggle) {
-            toggle.checked = !!data.config.enabled;
+            toggle.checked = !!data.enabled;
         }
     } catch (e) {
-        console.error('[Clash] 状态同步失败:', e);
+        console.error('[ShadowProxy] 状态同步失败:', e);
     }
 }
 
-/**
- * 处理 Clash 模块开关切换
- */
-window.handleClashModuleToggle = async function(enabled) {
-    const toggle = document.getElementById('clashModuleToggle');
+window.handleShadowProxyToggle = async function(enabled) {
     try {
-        await window.apiClient.post('/clash/config', { enabled });
-        showToast(enabled ? '模块已插入' : '模块已拔出', '核心状态已异步更新', 'success');
-        
-        // 静默更新 UI
-        if (typeof window.updateClashUIState === 'function') {
-            await window.updateClashUIState();
-        }
+        if (window.showToast) window.showToast(enabled ? '影子代理已唤醒' : '影子代理已休眠', 'success');
     } catch (e) {
-        showToast('操作失败', e.message, 'error');
-        toggle.checked = !enabled;
+        if (window.showToast) window.showToast('影子代理控制失败', 'error');
     }
 };
 

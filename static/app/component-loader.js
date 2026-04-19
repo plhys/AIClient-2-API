@@ -109,7 +109,7 @@ async function initializeComponents() {
             { path: `${basePath}section-usage.html`, container: '#content-container', position: 'beforeend' },
             { path: `${basePath}section-logs.html`, container: '#content-container', position: 'beforeend' },
             { path: `${basePath}section-plugins.html`, container: '#content-container', position: 'beforeend' },
-            { path: `${basePath}section-clash.html`, container: '#content-container', position: 'beforeend' },
+            { path: `${basePath}section-shadow-proxy.html`, container: '#content-container', position: 'beforeend' },
         ];
         
         await loadComponents(sectionComponents);

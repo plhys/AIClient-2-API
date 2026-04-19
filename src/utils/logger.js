@@ -133,15 +133,14 @@ class Logger {
     }
 
     /**
-     * 清除请求上下文
+     * 清除请求上下文 (审计加固：支持强制立即释放)
      * @param {string} requestId - 请求ID
      */
     clearRequestContext(requestId) {
+        if (!requestId) requestId = this.getCurrentRequestId();
         if (requestId) {
             this.requestContext.delete(requestId);
         }
-        // AsyncLocalStorage 不需要手动清除，run() 会在结束时自动处理
-        // 如果使用了 enterWith，则没有简单的方法在该异步路径中清除
     }
 
 
