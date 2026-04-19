@@ -53,26 +53,24 @@ function compareVersions(v1, v2) {
  */
 export async function checkForUpdates() {
     const versionFilePath = path.join(process.cwd(), 'VERSION');
-    let localVersion = '3.0.0-beta.1';
+    let localVersion = '4.1.3'; // 默认保底
     try {
         if (existsSync(versionFilePath)) {
+            // 强制实时读取磁盘文件，确保 UI 显示的永远是磁盘上的真相
             localVersion = readFileSync(versionFilePath, 'utf-8').trim();
         }
-    } catch (e) {}
+    } catch (e) {
+        logger.error('[Update] Error reading VERSION file:', e.message);
+    }
 
     try {
-        // 1. 极客加固：强制清理远程已删除的标签 (--prune --prune-tags)
-        try {
-            await execAsync('git fetch --all --tags --force --prune --prune-tags');
-        } catch (fetchErr) {
-            await execAsync('git fetch --unshallow --tags --prune --prune-tags').catch(() => {});
-        }
+        // 1. 尝试静默获取远程信息，但不阻塞本地版本显示
+        await execAsync('git fetch --tags').catch(() => {});
         
-        // 2. 列出所有 Tags
         const { stdout } = await execAsync('git tag -l');
         let tags = stdout.split('\n').map(t => t.trim()).filter(t => t.length > 0);
         
-        // 3. 工业级版本排序算法 (SemVer 兼容)
+        // ... (排序逻辑保持不变)
         tags.sort((a, b) => {
             const parseVersion = (v) => {
                 const parts = v.replace(/^v/, '').split(/[.-]/);
@@ -94,23 +92,29 @@ export async function checkForUpdates() {
                 if (pA < pB) return -1;
             }
             return 0;
-        }).reverse(); // 最新版本在最前
+        }).reverse();
 
-        // 4. 将 HEAD 始终保留在最后，作为“最新源码”选项
+        // --- 诚实的版本检查逻辑 ---
+        const latestTag = tags[0] || 'HEAD';
         const availableVersions = [...tags, 'HEAD'];
-        const latestVersion = tags[0] || 'HEAD';
 
-        // 工业级版本归一化比较 (忽略 v 前缀)
-        const normalize = (v) => v.replace(/^v/, '').trim();
-        const hasUpdate = normalize(localVersion) !== normalize(latestVersion);
+        // 仅当远程 Tag 确实大于本地时，才认为有更新
+        const hasUpdate = compareVersions(latestTag, localVersion) > 0;
 
         return {
             hasUpdate,
-            localVersion,
+            localVersion, // 显示 4.2.1
+            latestVersion: latestTag, // 显示 4.1.3
+            availableVersions,
+            updateMethod: 'git-tags-hard'
+        };
+
+        return {
+            hasUpdate,
+            localVersion, // 这就是 UI 渲染的来源
             latestVersion,
             availableVersions,
-            updateMethod: 'git-tags-hard',
-            error: null
+            updateMethod: 'git-tags-hard'
         };
     } catch (error) {
         logger.error('[Update] Failed to fetch tags:', error.message);

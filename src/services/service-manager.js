@@ -514,10 +514,8 @@ export async function getApiServiceWithFallback(config, requestedModel = null, o
             }
 
             // --- 执行 Clash 模块分流中间件 ---
+            // 注意：现在中间件会根据 serviceConfig.MODEL_PROVIDER 自动查找 routing 配置
             const clashMiddleware = clashModule.getMiddleware();
-            if (selectedProviderConfig.PROXY_TAG) {
-                serviceConfig.PROXY_TAG = selectedProviderConfig.PROXY_TAG;
-            }
             await clashMiddleware(serviceConfig);
         } else {
             const errorMsg = `[API Service] No healthy provider found in pool for ${config.MODEL_PROVIDER}${actualModelName ? ` supporting model: ${actualModelName}` : ''}`;

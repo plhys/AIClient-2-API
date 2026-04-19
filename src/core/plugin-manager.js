@@ -70,6 +70,14 @@ class PluginManager {
 
     async initAll(config) {
         this.globalConfig = config;
+        
+        // --- 幽灵模式优化：跳过非核心插件加载 ---
+        if (process.env.GHOST_MODE === 'true') {
+            logger.info('[PluginManager] Ghost mode active, skipping non-core plugin loading.');
+            this.initialized = true;
+            return;
+        }
+
         await this.loadConfig();
         const pluginsDir = path.join(process.cwd(), 'src', 'plugins');
 
@@ -189,7 +197,17 @@ class PluginManager {
     getPluginByStaticPath() { return null; }
     async uninstallPlugin(name) {
         const dir = path.join(process.cwd(), 'src', 'plugins', name);
-        if (existsSync(dir)) await fs.rm(dir, { recursive: true, force: true });
+        if (existsSync(dir)) {
+            await fs.rm(dir, { recursive: true, force: true });
+        }
+        
+        // 彻底清理配置条目，防止重启后“自愈”系统尝试重新下载或报错
+        if (this.pluginsConfig.plugins[name]) {
+            delete this.pluginsConfig.plugins[name];
+            await this.saveConfig();
+            logger.info(`[PluginManager] Cleaned config for ${name}`);
+        }
+
         this.plugins.delete(name);
         return true;
     }

@@ -25,8 +25,16 @@ class ClashModule {
 
     async init() {
         this._loadConfig();
+        // --- 极客优化：禁止自动拉起进程 ---
+        // 幽灵模式下或未显式触发时，仅加载配置，不启动 Mihomo 核心
+        if (process.env.GHOST_MODE === 'true') {
+            logger.info('[Clash-Module] Ghost mode: keeping core silent.');
+            return;
+        }
+
         if (this._config.enabled) {
-            await this._startClash();
+            // await this._startClash(); // 改为手动或按需启动
+            logger.info('[Clash-Module] Module initialized, core status: idle.');
         }
         this._startNodesRefresher();
     }
@@ -237,13 +245,28 @@ rules:
 
     getMiddleware() {
         return async (config) => {
-            if (!this._config.enabled) return;
-            const tag = config.PROXY_TAG || null;
-            if (tag) {
-                config.PROXY_URL = `http://127.0.0.1:${this._getProviderPort(tag)}`;
-                logger.info(`[Clash-Route] Routing via regional listener: ${tag} (port: ${this._getProviderPort(tag)})`);
+            // 1. 如果 Clash 模块未启用或未启动核心进程，直接退回核心逻辑，保留核心配置中的原始 PROXY_URL
+            if (!this._config.enabled || !this._process) return;
+
+            // 2. 获取当前请求的供应商类型 (例如: gemini-cli-oauth)
+            const providerType = config.MODEL_PROVIDER;
+            
+            // 3. 优先级路由逻辑：
+            const targetTag = this._config.routing?.[providerType];
+            
+            if (targetTag === 'DIRECT') {
+                // 极客指令：这个供应商必须直连，无视任何代理设置
+                config.PROXY_URL = null; 
+                logger.info(`[Clash-Route] ${providerType} -> DIRECT (Force)`);
+            } else if (targetTag && targetTag !== 'GLOBAL') {
+                // 极客指令：定向到特定区域
+                config.PROXY_URL = `http://127.0.0.1:${this._getProviderPort(targetTag)}`;
+                logger.info(`[Clash-Route] ${providerType} -> Regional Node: ${targetTag} (port: ${this._getProviderPort(targetTag)})`);
             } else {
+                // 默认逻辑：走 Clash 模块的默认混合端口 (7890)
+                // 这样当 Clash 开启时，它会自动“接管”掉 config.json 里的全局设置
                 config.PROXY_URL = `http://127.0.0.1:${this._config.port}`;
+                // logger.debug(`[Clash-Route] ${providerType} -> Default Module Proxy (7890)`);
             }
         };
     }

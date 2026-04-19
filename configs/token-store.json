@@ -1,19 +1,9 @@
 {
   "tokens": {
-    "983af260931e299f87676a6b144880d05a26762d777063c2556373811a9c9187": {
+    "8e86a3f8d2a13804f7b6b4bf609c41ea07087ee53ea12fc7dac1b2eeee0b96ea": {
       "username": "admin",
-      "loginTime": 1776584472730,
-      "expiryTime": 1776588072730
-    },
-    "b81e092a92c5b8ee27ebee8de4d45e5786670c1b14ac1b2af947537517f905ff": {
-      "username": "admin",
-      "loginTime": 1776585800608,
-      "expiryTime": 1776589400608
-    },
-    "fbbdf34608c8abedb2c61fae8f8a9083cf16e040b010fd75e092f3c8e30c7d54": {
-      "username": "admin",
-      "loginTime": 1776585837575,
-      "expiryTime": 1776589437575
+      "loginTime": 1776592983511,
+      "expiryTime": 1776596583511
     }
   }
 }
