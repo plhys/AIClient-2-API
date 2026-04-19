@@ -12,13 +12,14 @@ const componentCache = new Map();
  * @returns {Promise<string>} - 组件 HTML 内容
  */
 async function loadComponent(componentPath) {
+    const versionedPath = `${componentPath}?v=4.2.7`;
     // 检查缓存
-    if (componentCache.has(componentPath)) {
-        return componentCache.get(componentPath);
+    if (componentCache.has(versionedPath)) {
+        return componentCache.get(versionedPath);
     }
 
     try {
-        const response = await fetch(componentPath);
+        const response = await fetch(versionedPath);
         if (!response.ok) {
             throw new Error(`Failed to load component: ${componentPath} (${response.status})`);
         }

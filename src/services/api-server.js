@@ -126,12 +126,14 @@ async function startServer() {
     });
 
     serverInstance.listen(PORT, HOST, () => {
-        logger.info(`🚀 [A-Plan v4.2.5] Listening on port ${PORT}. Hydrating core...`);
+        const VERSION = process.env.APP_VERSION || '4.2.7';
+        logger.info(`🚀 [A-Plan v${VERSION}] Listening on port ${PORT}. Hydrating core...`);
         
         // 3. 在端口开启后的“背景音”里，异步执行重型初始化
         bootstrapCore().catch(err => {
             global.BOOTSTRAP_ERROR = err;
-            logger.error('[A-Plan v4.2.5] Critical Bootstrap Failure:', err.message);
+            const VERSION = process.env.APP_VERSION || '4.2.7';
+            logger.error(`[A-Plan v${VERSION}] Critical Bootstrap Failure:`, err.message);
         });
     });
 }

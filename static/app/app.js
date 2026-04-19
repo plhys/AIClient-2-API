@@ -142,25 +142,8 @@ export function initApp() {
  * 初始化 Clash 模块开关逻辑 (内建)
  */
 async function initShadowProxyControl() {
-    try {
-        const response = await fetch('/api/shadow-proxy/info');
-        const data = await response.json();
-        const toggle = document.getElementById('shadowProxyToggle');
-        if (toggle) {
-            toggle.checked = !!data.enabled;
-        }
-    } catch (e) {
-        console.error('[ShadowProxy] 状态同步失败:', e);
-    }
+    // 逻辑已迁移至 shadow-proxy-manager.js，此处仅保留占位以防报错
 }
-
-window.handleShadowProxyToggle = async function(enabled) {
-    try {
-        if (window.showToast) window.showToast(enabled ? '影子代理已唤醒' : '影子代理已休眠', 'success');
-    } catch (e) {
-        if (window.showToast) window.showToast('影子代理控制失败', 'error');
-    }
-};
 
 /**
  * 移动端菜单

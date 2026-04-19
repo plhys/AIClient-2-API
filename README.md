@@ -1,41 +1,35 @@
 # 🚀 A计划 (A-Plan) - AI 接口网关
 
-**A计划** 是一个 AI 接口中转服务，能把各种"白嫖"模型（Gemini CLI、Claude、Kiro、Grok、DeepSeek 等）统一包装成 OpenAI 格式的 API，让你像用 OpenAI 一样简单地调用它们。
+**A计划** 是一个为极客设计的、专为不稳定的 POD 环境优化的 AI 接口中转网关。它能把各种模型（Gemini CLI/OAuth、Claude Kiro、Grok、Nvidia NIM、Groq、Github Models 等）统一包装成 OpenAI 格式的 API。
 
 ---
 
-## 🎯 这是什么？
+## 🎯 核心哲学
 
-简单说，它就是一个**API 转发器**：
-
-```
-你的应用 → A计划 → 各种免费模型 → 返回结果
-```
-
-**能做什么：**
-- 把 Gemini CLI、Claude、Kiro、Grok、DeepSeek 等模型统一成 OpenAI API 格式
-- 支持多 Key 轮询，防止单个 Key 被限流
-- 内置代理支持，解决地区限制
-- 带管理后台，可以在线配置和查看用量
-
----
+- **极致轻量**: 零 SDK 依赖，纯原生 HTTPS 实现，POD 启动耗时 < 1s。
+- **寄生生存**: 针对 3-5 天频繁调度的服务器环境优化，支持冷启动 Token 懒加载 (JIT)。
+- **幽灵模式**: 默认锁定 **18781** 端口，支持端口僵尸自动清理，确保 POD 重建后即刻可用。
 
 ## 🛠️ 快速部署
 
-### 方式一：直接运行（推荐）
+### 极客一键拉起 (Linux / macOS)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/plhys/a-plan/master/install-and-run.sh | bash
+```
+
+### 手动部署
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/plhys/a-plan.git ~/a-plan
 cd ~/a-plan
 
-# 2. 安装依赖
-npm install
+# 2. 快速安装依赖
+pnpm install # 或 npm install
 
-# 3. 启动服务
+# 3. 启动（默认端口 18781）
 npm start
-# 或者指定端口和密码
-A_PORT=18788 A_ADMIN_PASSWORD=123456 npm start
 ```
 
 ### 方式二：Docker（待实现）

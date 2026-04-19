@@ -209,14 +209,40 @@ export async function handleUIApiRequests(method, pathParam, req, res, currentCo
             });
             if (body.url) {
                 const spMod = await getShadowProxy();
-                spMod._config.subscriptions.push({ url: body.url, name: body.name || 'New Sub' });
+                spMod._config.subscriptions.push({ 
+                    url: body.url, 
+                    name: body.name || 'New Sub',
+                    addedAt: new Date().toISOString()
+                });
                 spMod._saveConfig();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
                 return true;
             }
         }
-        // ... 后续增加订阅管理、路由绑定、AI 测速等接口
+
+        // 4.2.7 极客补强：删除订阅接口
+        if (pathParam.startsWith('/api/shadow-proxy/subscription/') && method === 'DELETE') {
+            const index = parseInt(pathParam.split('/').pop());
+            const spMod = await getShadowProxy();
+            if (spMod && !isNaN(index) && spMod._config.subscriptions[index]) {
+                spMod._config.subscriptions.splice(index, 1);
+                spMod._saveConfig();
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+                return true;
+            }
+        }
+        // 4.2.7 极客补强：手动刷新节点
+        if (pathParam === '/api/shadow-proxy/refresh-nodes' && method === 'POST') {
+            const spMod = await getShadowProxy();
+            if (spMod) {
+                spMod.refreshNodes().catch(e => logger.error('[Shadow-Proxy] Refresh failed:', e.message));
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+                return true;
+            }
+        }
     }
 
     // Clash 模块管理路由 (极客热插拔增强版)

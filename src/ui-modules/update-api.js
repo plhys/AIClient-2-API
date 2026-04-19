@@ -53,7 +53,7 @@ function compareVersions(v1, v2) {
  */
 export async function checkForUpdates() {
     const versionFilePath = path.join(process.cwd(), 'VERSION');
-    let localVersion = '4.1.3'; // 默认保底
+    let localVersion = '4.2.7'; // 默认保底
     try {
         if (existsSync(versionFilePath)) {
             // 强制实时读取磁盘文件，确保 UI 显示的永远是磁盘上的真相
@@ -103,8 +103,8 @@ export async function checkForUpdates() {
 
         return {
             hasUpdate,
-            localVersion, // 显示 4.2.1
-            latestVersion: latestTag, // 显示 4.1.3
+            localVersion,
+            latestVersion: latestTag,
             availableVersions,
             updateMethod: 'git-tags-hard'
         };

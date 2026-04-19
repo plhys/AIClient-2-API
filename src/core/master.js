@@ -13,6 +13,7 @@
 
 import { fork } from 'child_process';
 import os from 'os';
+import fs from 'fs';
 import logger from '../utils/logger.js';
 import * as http from 'http';
 import * as path from 'path';
@@ -21,6 +22,17 @@ import { isRetryableNetworkError } from '../utils/common.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// 读取版本号
+let appVersion = '4.2.7';
+try {
+    const versionFilePath = path.join(process.cwd(), 'VERSION');
+    if (fs.existsSync(versionFilePath)) {
+        appVersion = fs.readFileSync(versionFilePath, 'utf8').trim();
+    }
+} catch (error) {
+    logger.warn('[Master] Failed to read VERSION file:', error.message);
+}
 
 // 子进程实例映射
 let workerProcesses = new Map();
@@ -69,7 +81,8 @@ function startWorker(index = 0) {
         env: {
             ...process.env,
             IS_WORKER_PROCESS: 'true',
-            WORKER_ID: index
+            WORKER_ID: index,
+            APP_VERSION: appVersion
         }
     });
 
