@@ -115,12 +115,35 @@ async function updateProviderRoute(provider, node) {
 async function saveClashSettings() {
     const subUrl = document.getElementById('clashSubUrlInput').value;
     const port = parseInt(document.getElementById('clashPortInput').value);
+    const saveBtn = document.querySelector('button[onclick="window.saveClashSettings()"]');
+    const originalHtml = saveBtn.innerHTML;
 
     try {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在同步节点...';
+        
         await window.apiClient.post('/clash/config', { subUrl, port });
-        showToast('Clash 配置已更新，核心正在重启...', 'success');
-        setTimeout(loadClashDetails, 3000);
+        showToast('配置已下发，正在实时抓取节点...', 'success');
+        
+        // 自动轮询：直到刷出节点为止
+        let checkCount = 0;
+        const autoRefresh = setInterval(async () => {
+            checkCount++;
+            const data = await window.apiClient.get('/clash/info');
+            if (data.nodes && data.nodes.length > 0 || checkCount > 5) {
+                clearInterval(autoRefresh);
+                await loadClashDetails();
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalHtml;
+                if (data.nodes.length > 0) {
+                    showToast(`成功抓取 ${data.nodes.length} 个节点`, 'success');
+                }
+            }
+        }, 1500);
+        
     } catch (e) {
         showToast('配置保存失败: ' + e.message, 'error');
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalHtml;
     }
 }

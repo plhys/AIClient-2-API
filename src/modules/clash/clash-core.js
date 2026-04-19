@@ -85,7 +85,18 @@ class ClashModule {
         });
 
         this._process.unref();
-        setTimeout(() => this._refreshNodesImmediately(), 3000);
+        
+        // --- 极客细化：极速探测机制 ---
+        // 核心拉起后，立即进入高频探测模式，直到抓取到首批节点，不再死等 3 秒
+        let attempts = 0;
+        const quickRefresher = setInterval(async () => {
+            attempts++;
+            await this._refreshNodesImmediately();
+            if (this._nodes.length > 0 || attempts > 10) {
+                clearInterval(quickRefresher);
+                logger.info(`[Clash-Module] Core active, fetched ${this._nodes.length} nodes after ${attempts} attempts.`);
+            }
+        }, 800);
     }
 
     _stopClash() {
