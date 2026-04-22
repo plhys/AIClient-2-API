@@ -25,6 +25,12 @@ function getBaseProviderConfigs() {
             defaultPath: 'configs/gemini/'
         },
         { 
+            id: 'gemini-api-key', 
+            name: 'Google AI Studio (API Key)', 
+            icon: 'fa-key',
+            defaultPath: 'configs/gemini-key/'
+        },
+        { 
             id: 'gemini-antigravity', 
             name: t('dashboard.routing.nodeName.antigravity'), 
             icon: 'fa-rocket',

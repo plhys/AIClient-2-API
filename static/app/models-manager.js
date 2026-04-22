@@ -183,6 +183,7 @@ function getProviderDisplayName(providerType) {
 
     const displayNames = {
         'gemini-cli-oauth': 'Gemini CLI (OAuth)',
+        'gemini-api-key': 'Google AI Studio (API Key)',
         'gemini-antigravity': 'Gemini Antigravity',
         'claude-custom': 'Claude Custom',
         'claude-kiro-oauth': 'Claude Kiro (OAuth)',

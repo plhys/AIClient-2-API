@@ -1261,6 +1261,8 @@ function getFieldOrder(provider) {
             providerType = 'claude-custom';
         } else if (provider.GEMINI_OAUTH_CREDS_FILE_PATH) {
             providerType = 'gemini-cli-oauth';
+        } else if (provider.GEMINI_API_KEY) {
+            providerType = 'gemini-api-key';
         } else if (provider.KIRO_OAUTH_CREDS_FILE_PATH) {
             providerType = 'claude-kiro-oauth';
         } else if (provider.QWEN_OAUTH_CREDS_FILE_PATH) {

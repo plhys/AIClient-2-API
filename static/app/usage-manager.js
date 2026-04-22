@@ -899,6 +899,7 @@ function getProviderDisplayName(providerType) {
     const names = {
         'claude-kiro-oauth': 'Claude Kiro OAuth',
         'gemini-cli-oauth': 'Gemini CLI OAuth',
+        'gemini-api-key': 'Google AI Studio',
         'gemini-antigravity': 'Gemini Antigravity',
         'openai-codex-oauth': 'Codex OAuth',
         'openai-qwen-oauth': 'Qwen OAuth',
@@ -925,6 +926,7 @@ function getProviderIcon(providerType) {
     const icons = {
         'claude-kiro-oauth': 'fas fa-robot',
         'gemini-cli-oauth': 'fas fa-gem',
+        'gemini-api-key': 'fas fa-key',
         'gemini-antigravity': 'fas fa-rocket',
         'openai-codex-oauth': 'fas fa-terminal',
         'openai-qwen-oauth': 'fas fa-code',

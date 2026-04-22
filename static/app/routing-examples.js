@@ -174,6 +174,17 @@ function getAvailableRoutes() {
             badgeClass: 'oauth'
         },
         {
+            provider: 'gemini-api-key',
+            name: 'Google AI Studio (API Key)',
+            paths: {
+                openai: '/gemini-api-key/v1/chat/completions',
+                claude: '/gemini-api-key/v1/messages'
+            },
+            description: 'Google AI Studio API Key',
+            badge: 'API Key',
+            badgeClass: 'api-key'
+        },
+        {
             provider: 'gemini-antigravity',
             name: 'Gemini Antigravity',
             paths: {
@@ -353,6 +364,28 @@ async function copyCurlExample(provider, options = {}) {
             }
             break;
             
+        case 'gemini-api-key':
+            if (protocol === 'openai') {
+                curlCommand = `curl http://localhost:3000${path} \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_GEMINI_API_KEY" \
+  -d '{
+    "model": "gemini-2.5-flash",
+    "messages": [{"role": "user", "content": "${message}"}],
+    "max_tokens": 1000
+  }'`;
+            } else {
+                curlCommand = `curl http://localhost:3000${path} \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_GEMINI_API_KEY" \
+  -d '{
+    "model": "gemini-2.5-flash",
+    "max_tokens": 1000,
+    "messages": [{"role": "user", "content": "${message}"}]
+  }'`;
+            }
+            break;
+            
         case 'openaiResponses-custom':
             if (protocol === 'openai') {
                 curlCommand = `curl http://localhost:3000${path} \\
@@ -423,6 +456,7 @@ function renderRoutingExamples(providerConfigs) {
     const iconMap = {
         'forward-api': 'fa-share-square',
         'gemini-cli-oauth': 'fa-gem',
+        'gemini-api-key': 'fa-key',
         'gemini-antigravity': 'fa-rocket',
         'openai-custom': 'fa-comments',
         'claude-custom': 'fa-brain',
@@ -437,6 +471,7 @@ function renderRoutingExamples(providerConfigs) {
     // 默认模型映射 (用于 curl 示例)
     const modelMap = {
         'gemini-cli-oauth': 'gemini-3-flash-preview',
+        'gemini-api-key': 'gemini-2.5-flash',
         'gemini-antigravity': 'gemini-3-flash-preview',
         'claude-custom': 'claude-sonnet-4-6',
         'claude-kiro-oauth': 'claude-sonnet-4-6',

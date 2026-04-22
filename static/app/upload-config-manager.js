@@ -1114,6 +1114,12 @@ function detectProviderFromPath(filePath) {
             shortName: 'gemini-oauth'
         },
         {
+            patterns: ['configs/gemini-key/', '/gemini-key/', 'configs/gemini-api-key/'],
+            providerType: 'gemini-api-key',
+            displayName: 'Google AI Studio (API Key)',
+            shortName: 'gemini-key'
+        },
+        {
             patterns: ['configs/qwen/', '/qwen/'],
             providerType: 'openai-qwen-oauth',
             displayName: 'Qwen OAuth',
