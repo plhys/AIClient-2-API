@@ -61,9 +61,9 @@ curl -sSL https://raw.githubusercontent.com/plhys/a-plan/master/install-and-run.
 ```
 
 **配置说明：**
-- 默认端口：`3000`（可通过 `PORT` 环境变量修改，如 `PORT=18781`）
-- 默认密码：`abc123`
-- 访问地址：`http://你的IP:端口`
+- 默认端口：`18781`（可通过 `PORT` 环境变量修改）
+- 默认密码：`123456`
+- 访问地址：`http://你的IP:18781`
 
 仅 5 个核心依赖，安装几秒完成。
 
