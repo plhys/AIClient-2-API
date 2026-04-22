@@ -2,8 +2,9 @@
   "name": "a-plan",
   "version": "4.2.8",
   "type": "module",
-  "description": "极速版 - 按需加载依赖",
+  "description": "极速版",
   "dependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4",
     "axios": "^1.14.0",
     "dotenv": "^16.4.5",
     "lodash": "^4.17.21",
