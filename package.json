@@ -1,6 +1,6 @@
 {
   "name": "a-plan",
-  "version": "4.2.8",
+  "version": "4.2.9",
   "type": "module",
   "description": "A计划 - AI 接口网关",
   "dependencies": {

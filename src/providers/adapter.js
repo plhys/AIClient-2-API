@@ -1,5 +1,6 @@
 import { OpenAIResponsesApiService } from './openai/openai-responses-core.js';
 import { GeminiApiService } from './gemini/gemini-core.js';
+import { GeminiApiKeyService } from './gemini/gemini-api-key-core.js';
 import { AntigravityApiService } from './gemini/antigravity-core.js';
 import { OpenAIApiService } from './openai/openai-core.js';
 import { ClaudeApiService } from './claude/claude-core.js';
@@ -187,6 +188,38 @@ export class GeminiApiServiceAdapter extends ApiServiceAdapter {
             await this.geminiApiService.initialize();
         }
         return this.geminiApiService.getUsageLimits();
+    }
+}
+
+// Gemini API Key 服务适配器
+export class GeminiApiKeyServiceAdapter extends ApiServiceAdapter {
+    constructor(config) {
+        super();
+        this.geminiApiKeyService = new GeminiApiKeyService(config);
+    }
+
+    async generateContent(model, requestBody) {
+        return this.geminiApiKeyService.generateContent(model, requestBody);
+    }
+
+    async *generateContentStream(model, requestBody) {
+        yield* this.geminiApiKeyService.generateContentStream(model, requestBody);
+    }
+
+    async listModels() {
+        return this.geminiApiKeyService.listModels();
+    }
+
+    async refreshToken() {
+        return this.geminiApiKeyService.refreshToken();
+    }
+
+    async forceRefreshToken() {
+        return this.geminiApiKeyService.forceRefreshToken();
+    }
+
+    isExpiryDateNear() {
+        return this.geminiApiKeyService.isExpiryDateNear();
     }
 }
 
@@ -661,6 +694,7 @@ registerAdapter(MODEL_PROVIDER.OPENAI_CUSTOM, OpenAIApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.OPENAI_CUSTOM_RESPONSES, OpenAIResponsesApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.CLAUDE_CUSTOM, ClaudeApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.GEMINI_CLI, GeminiApiServiceAdapter);
+registerAdapter(MODEL_PROVIDER.GEMINI_API_KEY, GeminiApiKeyServiceAdapter);
 registerAdapter(MODEL_PROVIDER.ANTIGRAVITY, AntigravityApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.KIRO_API, KiroApiServiceAdapter);
 registerAdapter(MODEL_PROVIDER.CODEX_API, CodexApiServiceAdapter);
