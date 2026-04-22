@@ -234,7 +234,7 @@ echo "管理界面: http://localhost:3000"
 echo "按 Ctrl+C 停止服务"
 echo
 
-export PORT=${PORT:-3000}
+export PORT=${PORT:-18781}
 
 # 捕获 Ctrl+C，优雅关闭
 trap 'log_info "正在停止服务..."; exit 0' INT TERM
