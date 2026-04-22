@@ -1,22 +1,26 @@
 #!/bin/bash
 
-# 获取脚本所在目录并切换到该目录，确保在任何位置运行都能正常工作
-# 兼容直接运行和 pipe 到 bash 两种方式
-if [ -n "$BASH_SOURCE[0]" ] && [ -f "$BASH_SOURCE[0]" ]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    cd "$SCRIPT_DIR"
-else
-    # pipe 方式运行，使用当前目录
-    cd "$(pwd)"
-fi
-
-# 设置中文环境（静默失败）
+# 设置环境（静默失败）
 export LC_ALL=C 2>/dev/null
 export LANG=C 2>/dev/null
 
 echo "========================================"
 echo "  A计划 快速安装启动脚本"
 echo "========================================"
+echo
+
+# 如果当前目录没有 package.json，自动克隆项目
+if [ ! -f "package.json" ]; then
+    echo "[提示] 当前目录未找到项目，正在自动克隆..."
+    git clone https://github.com/plhys/a-plan.git /tmp/a-plan-clone
+    if [ $? -ne 0 ]; then
+        echo "[错误] 克隆失败，请检查网络连接"
+        exit 1
+    fi
+    cd /tmp/a-plan-clone
+    echo "[成功] 已切换到项目目录: $(pwd)"
+fi
+
 echo
 
 # 处理参数
@@ -28,18 +32,14 @@ for arg in "$@"; do
     fi
 done
 
-# 检查Git并尝试pull
-if [ $FORCE_PULL -eq 1 ]; then
+# 检查Git并尝试pull（仅当在git仓库中时）
+if [ $FORCE_PULL -eq 1 ] && [ -d ".git" ]; then
     echo "[更新] 正在从远程仓库拉取最新代码..."
-    if command -v git > /dev/null 2>&1; then
-        git pull
-        if [ $? -ne 0 ]; then
-            echo "[警告] Git pull 失败，请检查网络或手动处理冲突。"
-        else
-            echo "[成功] 代码已更新。"
-        fi
+    git pull
+    if [ $? -ne 0 ]; then
+        echo "[警告] Git pull 失败，请检查网络或手动处理冲突。"
     else
-        echo "[警告] 未检测到 Git，跳过代码拉取。"
+        echo "[成功] 代码已更新。"
     fi
 fi
 
@@ -68,7 +68,6 @@ fi
 # 检查package.json是否存在
 if [ ! -f "package.json" ]; then
     echo "[错误] 未找到package.json文件"
-    echo "请确保在项目根目录下运行此脚本"
     exit 1
 fi
 
