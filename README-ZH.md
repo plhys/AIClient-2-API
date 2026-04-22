@@ -1,4 +1,4 @@
-# 🚀 A计划 (A-Plan) v4.1.0 - 极致性能与高可用 AI 网关
+# 🚀 A计划 (A-Plan) v4.2.8 极速版 - 极致轻量，即装即用
 
 **A计划 (A-Plan)** 是一款专为极客、深度用户和生产环境设计的 AI 接口中转网关。它能将各类“白嫖”模型（Gemini CLI, Claude Kiro, Grok SSO, DeepSeek Reverse）统一封装为 OpenAI 标准接口，并提供极致的稳定性。
 
@@ -16,6 +16,10 @@
 
 ## 📅 更新日志
 
+- **v4.2.8** (2026-04-22)
+    - **[极速] 精简核心依赖**：仅保留 5 个核心依赖（dotenv, ws, axios, uuid, lodash），安装仅需几秒
+    - **[即装即用] Web UI + OpenAI 自定义模式**：开箱即用，无需等待 npm install
+    - **[按需加载] 其他 Provider 依赖**：需要用到 Gemini、Claude 等 Provider 时再手动安装对应依赖
 - **v4.2.5** (2026-04-19)
     - **[兼容] Shell 适配与脚本加固**：全面 POSIX 化 `start.sh`，修复在 `dash` 环境下的启动报错。
     - **[语义] 日志信息规范化**：校正启动过程中的语义误导，优化开发者调试体验。
@@ -44,21 +48,17 @@
 
 ---
 
-## 🛠️ 极速部署 (K8s / Pod 调度环境首选)
+## 🛠️ 极速部署 (v4.2.8 极速版)
 
-针对 Pod 经常重置但拥有**持久化挂载目录**（如 `/home/skywork/workspace`）的环境：
+**一条命令，即装即用：**
+```bash
+git clone https://github.com/plhys/a-plan.git ~/a-plan && cd ~/a-plan && npm install && npm start
+```
 
-1. **首次克隆与安装**：
-   ```bash
-   git clone https://github.com/plhys/a-plan.git ~/workspace/a-plan
-   cd ~/workspace/a-plan && npm install --production
-   ```
-2. **一键复活 (start.sh)**：
-   每次 Pod 启动时运行：
-   ```bash
-   sh start.sh
-   ```
-   **脚本会自动：** 异步检查云端配置、自动修复依赖碎片、拉起高可用 Master 守护进程。
+仅 5 个核心依赖，安装几秒完成。启动后访问 Web UI，默认密码 `abc123`。
+
+**需要其他 Provider 时：**
+在 Web UI 中添加对应渠道，手动安装所需依赖即可。
 
 ---
 
