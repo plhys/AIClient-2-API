@@ -70,6 +70,7 @@ for arg in "$@"; do
             echo "  --pull     从Git远程拉取最新代码"
             echo "  --offline  强制使用离线模式（需要 node_modules.tar.gz）"
             echo "  --mirror   使用国内镜像安装"
+            echo "  --detach   后台运行（守护进程模式）"
             echo "  --help     显示此帮助信息"
             exit 0
             ;;
@@ -228,15 +229,44 @@ echo
 echo "========================================"
 echo "  启动 A-Plan 服务..."
 echo "========================================"
-echo
-echo "服务地址: http://localhost:3000"
-echo "管理界面: http://localhost:3000"
-echo "按 Ctrl+C 停止服务"
-echo
+
+# 解析更多参数
+DETACH=0
+for arg in "$@"; do
+    case $arg in
+        -d|--detach|--background)
+            DETACH=1
+            ;;
+    esac
+done
 
 export PORT=${PORT:-18781}
 
-# 捕获 Ctrl+C，优雅关闭
-trap 'log_info "正在停止服务..."; exit 0' INT TERM
-
-node src/core/master.js
+if [ $DETACH -eq 1 ]; then
+    # 后台运行
+    echo "服务地址: http://localhost:$PORT"
+    echo "管理界面: http://localhost:$PORT"
+    echo "日志文件: a-plan.log"
+    echo "后台启动中..."
+    
+    nohup node src/core/master.js > a-plan.log 2>&1 &
+    sleep 2
+    
+    if pgrep -f "master.js" > /dev/null; then
+        log_success "服务已启动 (PID: $(pgrep -f 'master.js'))"
+    else
+        log_error "服务启动失败，请查看 a-plan.log"
+        exit 1
+    fi
+else
+    # 前台运行
+    echo "服务地址: http://localhost:$PORT"
+    echo "管理界面: http://localhost:$PORT"
+    echo "按 Ctrl+C 停止服务"
+    echo
+    
+    # 捕获 Ctrl+C，优雅关闭
+    trap 'log_info "正在停止服务..."; exit 0' INT TERM
+    
+    node src/core/master.js
+fi
