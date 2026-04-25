@@ -21,7 +21,7 @@ const DATA_DIR = resolveDataDir();
 const ALL_MODEL_PROVIDERS = Object.values(MODEL_PROVIDER);
 
 function normalizeConfiguredProviders(config) {
-    const fallbackProvider = MODEL_PROVIDER.GEMINI_CLI;
+    const fallbackProvider = MODEL_PROVIDER.OPENAI_CUSTOM;
     const dedupedProviders = [];
 
     const addProvider = (value) => {
@@ -67,10 +67,10 @@ function normalizeConfiguredProviders(config) {
  */
 export async function initializeConfig(args = process.argv.slice(2), configFilePath = 'configs/config.json') {
     const defaultConfig = {
-        REQUIRED_API_KEY: process.env.API_KEY || "123456", // 优先从环境变量读取
+        REQUIRED_API_KEY: process.env.API_KEY || "请修改-生产环境必须设置API_KEY", // 优先从环境变量读取
         SERVER_PORT: parseInt(process.env.PORT) || 18781,
         HOST: process.env.HOST || '0.0.0.0',
-        MODEL_PROVIDER: MODEL_PROVIDER.GEMINI_CLI,
+        MODEL_PROVIDER: MODEL_PROVIDER.OPENAI_CUSTOM,
         PROXY_URL: process.env.PROXY_URL || null, // 动态代理配置
         PROXY_ENABLED_PROVIDERS: [], // 启用代理的提供商列表，如 ['gemini-cli-oauth', 'claude-kiro-oauth']
         PROMPT_LOG_BASE_NAME: "prompt_log",

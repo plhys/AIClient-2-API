@@ -11,7 +11,7 @@ const PLUGIN_MARKETPLACE = [];
 // 插件中文名称映射
 const PLUGIN_DISPLAY_NAME_ZH = {
     'default-auth': '默认认证',
-    'api-potluck': 'API 套餐',
+    'api-potluck': 'A计划',
     'ai-monitor': 'AI 监控',
     'model-usage-stats': '用量统计'
 };

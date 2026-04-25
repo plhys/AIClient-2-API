@@ -1,13 +1,15 @@
 {
+  "_comment": "=== A计划提供商池配置模板 ===",
+  "_说明": "请将下方 OPENAI_BASE_URL 和 OPENAI_API_KEY 替换为你自己的API地址和密钥。UUID可以随机生成。",
   "openai-custom": [
     {
-      "customName": "请修改-节点名称",
-      "OPENAI_API_KEY": "请修改-API密钥",
-      "OPENAI_BASE_URL": "请修改-API地址",
-      "checkModelName": "请修改-健康检查模型名",
+      "customName": "我的OpenAI兼容节点",
+      "OPENAI_API_KEY": "sk-你的API-KEY",
+      "OPENAI_BASE_URL": "https://你的API地址/v1",
+      "checkModelName": "gpt-4o-mini",
       "checkHealth": true,
       "notSupportedModels": [],
-      "uuid": "请修改-唯一UUID",
+      "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
       "isHealthy": true,
       "isDisabled": false,
       "lastUsed": null,
@@ -23,3 +25,4 @@
     }
   ]
 }
+

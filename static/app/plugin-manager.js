@@ -118,7 +118,7 @@ function renderPluginsList() {
         // 插件直达页面映射
         const pluginRoutes = {
             'api-potluck': [
-                { name: 'API Potluck', path: '/potluck.html', icon: 'fa-key' },
+                { name: 'A计划', path: '/potluck.html', icon: 'fa-key' },
                 { name: '用户门户', path: '/potluck-user.html', icon: 'fa-user' }
             ],
             'model-usage-stats': [
