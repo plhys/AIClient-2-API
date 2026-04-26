@@ -1,0 +1,71 @@
+# ============================================
+# A-Plan Docker Compose 配置
+# 适合：稳定生产环境部署
+# ============================================
+
+version: '3.8'
+
+services:
+  a-plan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: a-plan:5.1.0
+    container_name: a-plan
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 端口映射
+    ports:
+      - "18781:18781"      # A-Plan 主服务
+      - "7681:7681"        # TTYD WebSSH（通过 VPN 访问）
+      - "15888:15888"      # EasyTier RPC
+    
+    # 环境变量
+    environment:
+      - NODE_ENV=production
+      - EASYTIER_PATH=/usr/local/bin/easytier-core
+      - TTYD_PATH=/usr/local/bin/ttyd
+      - ET_CONFIG_FILE=/app/configs/easytier.json
+      - PORT=18781
+      - HOST=0.0.0.0
+    
+    # 数据持久化
+    volumes:
+      - ./configs:/app/configs        # 配置文件
+      - ./logs:/app/logs              # 日志文件
+      - ./data:/app/data              # 数据存储
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18781/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    
+    # 资源限制（可选）
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2.0'
+    #       memory: 1G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 256M
+    
+    # 网络配置
+    networks:
+      - a-plan-net
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+networks:
+  a-plan-net:
+    driver: bridge

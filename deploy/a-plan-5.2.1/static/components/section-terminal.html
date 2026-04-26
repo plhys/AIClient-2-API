@@ -1,0 +1,48 @@
+<section id="terminal" class="section">
+  <div class="section-header">
+    <h2>🖥️ 网络终端</h2>
+    <p class="section-desc">基于 ttyd 的 WebSSH 终端</p>
+  </div>
+
+<div style="padding: 20px; height: calc(100vh - 200px);">
+    <iframe 
+      id="ssh-iframe"
+      style="width: 100%; height: 100%; border: none; border-radius: 8px; background: #1e1e1e;"
+      allow="fullscreen"
+    ></iframe>
+  </div>
+
+  <div style="padding: 0 20px; display: flex; gap: 12px; align-items: center;">
+    <span id="terminal-info" style="color: #8b949e; font-size: 14px;">连接信息: 加载中...</span>
+    <a id="terminal-newwin" href="#" target="_blank" style="padding: 6px 16px; background: #1f6feb; color: white; text-decoration: none; border-radius: 4px; font-size: 13px;">新窗口打开</a>
+    <button onclick="reloadTerminal()" style="padding: 6px 16px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">刷新终端</button>
+  </div>
+
+  <script>
+    // 动态设置TTYD终端URL
+    const TTYD_PORT = 822;
+    const ttydUrl = `${window.location.protocol}//${window.location.hostname}:${TTYD_PORT}`;
+    
+    // 页面加载时设置iframe src和链接
+    document.getElementById('ssh-iframe').src = ttydUrl;
+    document.getElementById('terminal-newwin').href = ttydUrl;
+    document.getElementById('terminal-info').textContent = `连接信息: ${window.location.hostname}:${TTYD_PORT}`;
+    
+    function reloadTerminal() {
+      const iframe = document.getElementById('ssh-iframe');
+      iframe.src = iframe.src;
+    }
+    
+    // 监听section切换，刷新iframe
+    document.addEventListener('sectionChanged', (e) => {
+      if (e.detail?.section === 'terminal') {
+        setTimeout(() => {
+          const iframe = document.getElementById('ssh-iframe');
+          if (iframe && !iframe.src) {
+            iframe.src = ttydUrl;
+          }
+        }, 100);
+      }
+    });
+  </script>
+</section>

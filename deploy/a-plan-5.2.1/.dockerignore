@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Logs
+logs
+*.log
+
+# Test files
+test*
+*.test.js
+coverage/
+
+# Build outputs
+dist/
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.swp

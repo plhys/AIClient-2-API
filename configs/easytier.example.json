@@ -1,0 +1,10 @@
+{
+  "vip": "",
+  "networkName": "",
+  "networkSecret": "",
+  "relay": "",
+  "noTun": false,
+  "latencyFirst": false,
+  "multiThread": true,
+  "autoStart": false
+}

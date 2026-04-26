@@ -1,0 +1,13 @@
+{
+  "updatedAt": "2026-04-26T23:55:00.000Z",
+  "summary": {
+    "requestCount": 0,
+    "promptTokens": 0,
+    "completionTokens": 0,
+    "totalTokens": 0,
+    "cachedTokens": 0,
+    "lastUsedAt": null
+  },
+  "providers": {},
+  "daily": {}
+}

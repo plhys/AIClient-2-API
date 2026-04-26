@@ -1,0 +1,9 @@
+{
+  "REQUIRED_API_KEY": "",
+  "SERVER_PORT": 18781,
+  "HOST": "0.0.0.0",
+  "LOG_LEVEL": "info",
+  "MASTER_PORT": 3100,
+  "MODEL_PROVIDER": "deepseek",
+  "DEFAULT_MODEL_PROVIDERS": ["deepseek", "openai-custom"]
+}

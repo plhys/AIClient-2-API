@@ -1,0 +1,7 @@
+{
+  "REQUIRED_API_KEY": "your-secure-api-key-here",
+  "SERVER_PORT": 18781,
+  "HOST": "0.0.0.0",
+  "LOG_LEVEL": "info",
+  "MASTER_PORT": 3100
+}

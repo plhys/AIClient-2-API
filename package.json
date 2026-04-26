@@ -1,0 +1,35 @@
+{
+  "name": "a-plan",
+  "version": "5.2.3",
+  "type": "module",
+  "description": "A \u8ba1\u5212 - AI \u63a5\u53e3\u7f51\u5173 + EasyTier VPN + WebSSH",
+  "dependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4",
+    "adm-zip": "^0.5.16",
+    "axios": "^1.14.0",
+    "dotenv": "^16.4.5",
+    "lodash": "^4.17.21",
+    "multer": "^2.0.2",
+    "ssh2": "^1.17.0",
+    "undici": "^7.12.0",
+    "uuid": "^11.1.0",
+    "ws": "^8.19.0"
+  },
+  "scripts": {
+    "start": "node src/core/master.js",
+    "start:standalone": "node src/services/api-server.js"
+  },
+  "bin": "a-plan.js",
+  "pkg": {
+    "assets": [
+      "configs/**/*",
+      "bin/**/*",
+      "public/**/*"
+    ],
+    "outputPath": "dist",
+    "targets": [
+      "node18-linux-x64",
+      "node18-linux-arm64"
+    ]
+  }
+}

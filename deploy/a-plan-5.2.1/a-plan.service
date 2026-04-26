@@ -1,0 +1,56 @@
+# ============================================
+# A-Plan Systemd 服务文件
+# 
+# 使用方法：
+# 1. 复制到 /etc/systemd/system/
+#    sudo cp a-plan.service /etc/systemd/system/
+#
+# 2. 编辑路径（根据实际安装路径）
+#    sudo vim /etc/systemd/system/a-plan.service
+#
+# 3. 重载 systemd
+#    sudo systemctl daemon-reload
+#
+# 4. 启动并启用开机自启
+#    sudo systemctl start a-plan
+#    sudo systemctl enable a-plan
+#
+# 5. 查看状态
+#    sudo systemctl status a-plan
+# ============================================
+
+[Unit]
+Description=A-Plan AI Gateway
+Documentation=https://gitee.com/JunFengLiangZi/a-plan
+After=network.target
+
+[Service]
+Type=simple
+User=root
+
+# 工作目录（根据实际安装路径修改）
+WorkingDirectory=/opt/a-plan
+
+# 启动命令
+ExecStart=/usr/bin/node src/core/master.js
+
+# 环境变量
+Environment="EASYTIER_PATH=/opt/a-plan/bin/easytier-core"
+Environment="TTYD_PATH=/opt/a-plan/bin/ttyd"
+Environment="ET_CONFIG_FILE=/opt/a-plan/configs/easytier.json"
+Environment="NODE_ENV=production"
+Environment="PORT=18781"
+Environment="HOST=0.0.0.0"
+
+# 重启策略
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60s
+StartLimitBurst=3
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

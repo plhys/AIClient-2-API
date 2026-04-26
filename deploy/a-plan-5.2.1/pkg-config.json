@@ -1,0 +1,17 @@
+{
+  "name": "a-plan",
+  "version": "5.2.0",
+  "bin": "a-plan.js",
+  "pkg": {
+    "assets": [
+      "src/**/*",
+      "configs/**/*",
+      "bin/**/*",
+      "public/**/*"
+    ],
+    "outputPath": "dist",
+    "targets": [
+      "node18-linux-x64"
+    ]
+  }
+}
